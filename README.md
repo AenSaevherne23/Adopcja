@@ -5,7 +5,7 @@ JWT_SECRET=jakis_ciag_znakow
 PORT=3000
 3. Utwórz bazę w xamppie o nazwie adoptions
 4. Wykonaj migracje Prismy - npx prisma migrate dev
-5. Załaduj dane startowe (seed) - npx prisma db seed
+5. Załaduj dane startowe (seed) - npx prisma db seed albo tak: npx prisma@6 migrate dev --name init
 Seed tworzy domyślne role (ADMIN, MODERATOR, NORMAL_USER) oraz przykładowe konto administratora (admin@schronisko.pl, password123)
 6. Uruchom serwer - npm run dev
 
