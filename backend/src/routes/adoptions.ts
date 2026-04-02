@@ -1,0 +1,141 @@
+import { Router, type Response } from 'express';
+import prisma from '../lib/prisma.js';
+import { authenticateToken } from '../middleware/authenticateToken.js';
+import { isStaff } from '../middleware/authorize.js';
+import { type AuthRequest } from '../types.js';
+import { z } from 'zod';
+import logger from '../lib/logger.js';
+
+const router = Router();
+
+const UpdateStatusSchema = z.object({
+  status: z.enum(['approved', 'rejected'])
+});
+
+// ─── 1. WYŚLIJ PROŚBĘ O ADOPCJĘ ─────────────────────────────────────────────
+router.post('/request/:animalId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { animalId } = req.params;
+
+    if (typeof animalId !== 'string') {
+      return res.status(400).json({ error: "Nieprawidłowy identyfikator zwierzaka" });
+    }
+
+    const userId = req.user!.userId;
+    const animal = await prisma.animal.findUnique({ where: { animal_id: animalId } });
+
+    if (!animal) return res.status(404).json({ error: "Nie znaleziono zwierzaka" });
+    if (animal.is_adopted) return res.status(400).json({ error: "Ten zwierzak ma już dom" });
+
+    if (animal.userId === userId) {
+      logger.warn(`Użytkownik ${userId} próbował adoptować własne zwierzę: ${animalId}`);
+      return res.status(400).json({ error: "Nie możesz adoptować własnego zwierzaka" });
+    }
+
+    const request = await prisma.adoptionRequest.create({
+      data: { animalId, userId }
+    });
+
+    logger.info(`Wysłano prośbę o adopcję: Animal ${animalId} przez User ${userId}`);
+    res.status(201).json({ message: "Prośba wysłana!", request });
+  } catch (error: any) {
+    if (error.code === 'P2002') return res.status(400).json({ error: "Już wysłałeś prośbę dla tego zwierzaka" });
+    logger.error("Błąd POST /request/:animalId:", error);
+    res.status(500).json({ error: "Błąd serwera" });
+  }
+});
+
+// ─── 2. MOJE WYSŁANE PROŚBY ─────────────────────────────────────────────────
+router.get('/my-sent-requests', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requests = await prisma.adoptionRequest.findMany({
+      where: { userId: req.user!.userId },
+      include: { animal: true }
+    });
+    res.json(requests);
+  } catch (error) {
+    logger.error("Błąd GET /my-sent-requests:", error);
+    res.status(500).json({ error: "Błąd serwera" });
+  }
+});
+
+// ─── 3. OTRZYMANE PROŚBY ────────────────────────────────────────────────────
+router.get('/my-received-requests', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const requests = await prisma.adoptionRequest.findMany({
+      where: isStaff(req) ? {} : { animal: { userId: req.user!.userId } },
+      include: {
+        animal: true,
+        user: { select: { email: true } }
+      }
+    });
+    res.json(requests);
+  } catch (error) {
+    logger.error("Błąd GET /my-received-requests:", error);
+    res.status(500).json({ error: "Błąd serwera" });
+  }
+});
+
+// ─── 4. DECYZJA O ADOPCJI (AKCEPTACJA/ODRZUCENIE) ───────────────────────────
+router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const { requestId } = req.params;
+
+    if (typeof requestId !== 'string') {
+      return res.status(400).json({ error: "Nieprawidłowy identyfikator prośby" });
+    }
+
+    const { status } = UpdateStatusSchema.parse(req.body);
+    const userId = req.user!.userId;
+
+    const request = await prisma.adoptionRequest.findUnique({
+      where: { request_id: requestId },
+      include: { animal: true }
+    });
+
+    if (!request) return res.status(404).json({ error: "Nie znaleziono prośby" });
+
+    const isOwner = request.animal.userId === userId;
+
+    if (!isOwner && !isStaff(req)) {
+      logger.warn(`Nieautoryzowana próba zmiany statusu prośby ${requestId} przez User ${userId}`);
+      return res.status(403).json({ error: "Tylko właściciel lub administracja może zarządzać tą prośbą" });
+    }
+
+    if (status === 'approved' && request.animal.is_adopted) {
+      return res.status(400).json({ error: "Ten zwierzak został już adoptowany przez kogoś innego" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.adoptionRequest.update({
+        where: { request_id: requestId },
+        data: { status }
+      });
+
+      if (status === 'approved') {
+        await tx.animal.update({
+          where: { animal_id: request.animalId },
+          data: { is_adopted: true }
+        });
+
+        await tx.adoptionRequest.updateMany({
+          where: {
+            animalId: request.animalId,
+            request_id: { not: requestId },
+            status: 'pending'
+          },
+          data: { status: 'rejected' }
+        });
+      }
+    });
+
+    logger.info(`Zmieniono status prośby ${requestId} na ${status} przez User ${userId}`);
+    res.json({ message: `Status zmieniony na: ${status}` });
+  } catch (error) {
+    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
+    logger.error(`Błąd PATCH /status/${req.params.requestId}:`, error);
+    res.status(500).json({ error: "Błąd podczas procesowania decyzji" });
+  }
+});
+
+export default router;

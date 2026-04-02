@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleEnum {
+  ADMIN
+  NORMAL_USER
+  MODERATOR
+}
+
+enum AdoptionStatus {
+  pending
+  approved
+  rejected
+}
+
+model Role {
+  role_id Int      @id @default(autoincrement())
+  name    RoleEnum @default(NORMAL_USER)
+  users   User[]
+
+  @@map("roles")
+}
+
+model User {
+  user_id          String            @id @default(uuid())
+  email            String            @unique
+  password         String
+  roleId           Int               @map("role_id")
+  role             Role              @relation(fields: [roleId], references: [role_id])
+  createdAt        DateTime          @default(now()) @map("created_at")
+  
+  // Relacje
+  postedAnimals    Animal[]          
+  adoptionRequests AdoptionRequest[] 
+
+  @@map("users")
+}
+
+model Animal {
+  animal_id        String            @id @default(uuid())
+  name             String            @db.VarChar(50)
+  description      String            @db.Text
+  image            String            @db.VarChar(255)
+  is_adopted       Boolean           @default(false)
+  
+  userId           String            @map("user_id") 
+  // POPRAWKA: onDelete: Cascade - usunięcie użytkownika usunie jego ogłoszenia
+  author           User              @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+  
+  adoptionRequests AdoptionRequest[]
+
+  @@map("animals")
+}
+
+model AdoptionRequest {
+  request_id String         @id @default(uuid())
+  animalId   String         @map("animal_id")
+  userId     String         @map("user_id")
+  status     AdoptionStatus @default(pending)
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  // POPRAWKA: onDelete: Cascade - usunięcie zwierzaka LUB użytkownika usuwa prośbę
+  animal     Animal         @relation(fields: [animalId], references: [animal_id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+
+  @@unique([userId, animalId])
+  @@map("adoption_requests")
+}
