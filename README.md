@@ -7,7 +7,8 @@ PORT=3000
 4. Wykonaj migracje Prismy - npx prisma migrate dev
 5. Załaduj dane startowe (seed) - npx prisma db seed albo tak: npx prisma@6 migrate dev --name init
 Seed tworzy domyślne role (ADMIN, MODERATOR, NORMAL_USER) oraz przykładowe konto administratora (admin@schronisko.pl, password123)
-6. Uruchom serwer - npm run dev
+6. Nie jestem pewny, ale chyba trzeba utworzyć folder uploads (na zdjęcia). Folder logs powinien utworzyć się sam.
+7. Uruchom serwer - npm run dev
 
 ENDPOINTY:
 /api/auth
