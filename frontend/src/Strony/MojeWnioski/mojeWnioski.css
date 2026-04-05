@@ -1,0 +1,92 @@
+.moje-wnioski {
+  min-height: 100vh;
+  padding: 110px 24px 30px;
+  background: #0d0f1a;
+  color: #ffffff;
+}
+
+.moje-wnioski-sekcja {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.moje-wnioski-tytul {
+  margin-top: 0;
+  margin-bottom: 28px;
+  font-size: 3rem;
+  text-align: center;
+}
+
+.moje-wnioski-komunikat {
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.moje-wnioski-komunikat.blad {
+  color: #fc8181;
+}
+
+.lista-wnioskow {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.karta-wniosku {
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ramka-obrazu-wniosku {
+  width: 100%;
+  max-width: 340px;
+  height: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.obraz-wniosku {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.karta-wniosku h2 {
+  margin: 0 0 12px;
+}
+
+.karta-wniosku p {
+  margin: 0 0 16px;
+}
+
+.status {
+  min-width: 140px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.status-oczekuje {
+  background: #975a16;
+  color: #fffaf0;
+}
+
+.status-zaakceptowano {
+  background: #276749;
+  color: #f0fff4;
+}
+
+.status-odrzucono {
+  background: #742a2a;
+  color: #fff5f5;
+}

@@ -1,0 +1,89 @@
+.strona-dodawania {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 110px 20px 30px;
+  background: #0d0f1a;
+  color: #ffffff;
+}
+
+.karta-dodawania {
+  width: 100%;
+  max-width: 620px;
+  padding: 28px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.karta-dodawania h1 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.formularz-dodawania {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formularz-dodawania label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formularz-dodawania input,
+.formularz-dodawania textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  padding: 12px;
+  font: inherit;
+}
+
+.formularz-dodawania input {
+  height: 44px;
+}
+
+.formularz-dodawania textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.formularz-dodawania input[type="file"] {
+  padding: 10px;
+  height: auto;
+}
+
+.formularz-dodawania button {
+  height: 46px;
+  border: none;
+  border-radius: 10px;
+  background: #2f855a;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.formularz-dodawania button:hover {
+  background: #276749;
+}
+
+.formularz-dodawania button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.komunikat-blad {
+  margin: 0;
+  color: #fc8181;
+}
+
+.komunikat-poprawny {
+  margin: 0;
+  color: #68d391;
+}

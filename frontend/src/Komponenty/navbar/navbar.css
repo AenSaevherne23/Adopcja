@@ -1,0 +1,94 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 24px;
+  background: rgba(12, 12, 20, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+}
+
+.navbar-lewa,
+.navbar-prawa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-logo {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.navbar-przycisk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  height: 42px;
+  padding: 0 16px;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+
+  background: transparent;
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: 0.2s ease;
+}
+
+.navbar-przycisk:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.navbar-przycisk-akcent {
+  background: #2f855a;
+  border-color: #2f855a;
+}
+
+.navbar-przycisk-akcent:hover {
+  background: #276749;
+}
+
+.navbar-przycisk-wyjdz {
+  background: #742a2a;
+  border-color: #742a2a;
+}
+
+.navbar-przycisk-wyjdz:hover {
+  background: #5f2121;
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    padding: 0 14px;
+  }
+
+  .navbar-logo {
+    font-size: 1.4rem;
+  }
+
+  .navbar-przycisk {
+    min-width: auto;
+    padding: 0 12px;
+    font-size: 0.88rem;
+  }
+}
+
+.navbar-prawa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}

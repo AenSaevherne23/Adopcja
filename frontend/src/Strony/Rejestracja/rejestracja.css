@@ -1,0 +1,82 @@
+.strona-formularza {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 100px 20px 20px;
+  background: #0d0f1a;
+  color: #ffffff;
+}
+
+.karta-formularza {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.karta-formularza h1 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.formularz {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formularz label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formularz input {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+}
+
+.formularz button {
+  height: 46px;
+  border: none;
+  border-radius: 10px;
+  background: #2f855a;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.formularz button:hover {
+  background: #276749;
+}
+
+.formularz button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.komunikat-blad {
+  color: #fc8181;
+  margin: 0;
+}
+
+.komunikat-poprawny {
+  color: #68d391;
+  margin: 0;
+}
+
+.dolny-link {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.dolny-link a {
+  color: #68d391;
+}

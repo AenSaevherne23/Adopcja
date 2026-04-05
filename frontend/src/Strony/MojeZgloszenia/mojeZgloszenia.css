@@ -1,0 +1,104 @@
+.moje-zgloszenia {
+  min-height: 100vh;
+  padding: 110px 24px 30px;
+  background: #0d0f1a;
+  color: #ffffff;
+}
+
+.sekcja-zgloszen {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tytul {
+  text-align: center;
+  font-size: 3rem;
+  margin-top: 0;
+  margin-bottom: 28px;
+}
+
+.blad {
+  text-align: center;
+  color: #fc8181;
+}
+
+.lista-zgloszen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.karta-zgloszenia {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 14px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ramka-obrazu {
+  width: 100%;
+  max-width: 360px;
+  height: 260px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.obraz {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.karta-zgloszenia h2 {
+  margin: 0 0 12px;
+}
+
+.karta-zgloszenia p {
+  margin: 0 0 16px;
+}
+
+.akcje-ogloszenia {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.przycisk-edytuj,
+.przycisk-usun {
+  height: 42px;
+  min-width: 120px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.przycisk-edytuj {
+  background: #2b6cb0;
+}
+
+.przycisk-edytuj:hover {
+  background: #245a96;
+}
+
+.przycisk-usun {
+  background: #742a2a;
+}
+
+.przycisk-usun:hover {
+  background: #5f2121;
+}

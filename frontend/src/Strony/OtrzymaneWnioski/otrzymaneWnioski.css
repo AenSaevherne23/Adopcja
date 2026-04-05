@@ -1,0 +1,112 @@
+.otrzymane-wnioski {
+  min-height: 100vh;
+  padding: 110px 24px 30px;
+  background: #0d0f1a;
+  color: white;
+}
+
+.sekcja-wnioskow {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tytul {
+  text-align: center;
+  font-size: 3rem;
+  margin-top: 0;
+  margin-bottom: 28px;
+}
+
+.blad {
+  text-align: center;
+  color: #fc8181;
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.karta {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 14px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ramka-obrazu {
+  width: 100%;
+  max-width: 360px;
+  height: 260px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.obraz {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.opis {
+  margin: 0 0 12px;
+}
+
+.uzytkownik {
+  margin: 0 0 16px;
+}
+
+.akcje {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.przycisk-akceptuj {
+  background: #2f855a;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.przycisk-odrzuc {
+  background: #c53030;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.status {
+  min-width: 180px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.status-approved {
+  background: #276749;
+}
+
+.status-rejected {
+  background: #742a2a;
+}
+
+.status-pending {
+  background: #975a16;
+}
