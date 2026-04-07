@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { fileTypeFromFile } from 'file-type';
+import { z } from 'zod';
 import prisma from '../lib/prisma.js';
 import { authenticateToken } from '../middleware/authenticateToken.js';
 import { isStaff } from '../middleware/authorize.js';
@@ -19,6 +20,24 @@ const LIMITS = {
 };
 
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+
+// --- WALIDACJA ZOD ---
+const SAFE_TEXT = /^[^<>{}()\[\]'";]*$/;
+
+const AnimalSchema = z.object({
+  name: z.string()
+    .min(LIMITS.name.min, `Imię musi mieć co najmniej ${LIMITS.name.min} znaki`)
+    .max(LIMITS.name.max, `Imię może mieć maksymalnie ${LIMITS.name.max} znaków`)
+    .trim()
+    .regex(SAFE_TEXT, "Imię zawiera niedozwolone znaki"),
+  description: z.string()
+    .min(LIMITS.desc.min, `Opis musi mieć co najmniej ${LIMITS.desc.min} znaków`)
+    .max(LIMITS.desc.max, `Opis może mieć maksymalnie ${LIMITS.desc.max} znaków`)
+    .trim()
+    .regex(SAFE_TEXT, "Opis zawiera niedozwolone znaki"),
+});
+
+const AnimalUpdateSchema = AnimalSchema.partial();
 
 // --- 1. KONFIGURACJA SKŁADOWANIA ---
 const storage = multer.diskStorage({
@@ -69,8 +88,6 @@ router.post('/', authenticateToken, (req: AuthRequest, res: Response, next: any)
   });
 }, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, description } = req.body;
-
     if (!req.file) return res.status(400).json({ error: 'Musisz dodać zdjęcie!' });
 
     const type = await fileTypeFromFile(req.file.path);
@@ -80,14 +97,13 @@ router.post('/', authenticateToken, (req: AuthRequest, res: Response, next: any)
       return res.status(400).json({ error: 'Przesłany plik nie jest prawdziwym obrazkiem!' });
     }
 
-    if (!name || name.length < LIMITS.name.min || name.length > LIMITS.name.max) {
+    const parsed = AnimalSchema.safeParse(req.body);
+    if (!parsed.success) {
       await deleteFile(req.file.path);
-      return res.status(400).json({ error: `Imię musi mieć od ${LIMITS.name.min} do ${LIMITS.name.max} znaków.` });
+      return res.status(400).json({ error: 'Błędne dane', details: parsed.error.issues });
     }
-    if (!description || description.length < LIMITS.desc.min || description.length > LIMITS.desc.max) {
-      await deleteFile(req.file.path);
-      return res.status(400).json({ error: `Opis musi mieć od ${LIMITS.desc.min} do ${LIMITS.desc.max} znaków.` });
-    }
+
+    const { name, description } = parsed.data;
 
     const newAnimal = await prisma.animal.create({
       data: {
@@ -134,7 +150,6 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next: 
 }, async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { name, description } = req.body;
 
     const animal = await prisma.animal.findUnique({ where: { animal_id: id } });
     if (!animal) {
@@ -143,7 +158,6 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next: 
     }
 
     const isOwner = animal.userId === req.user?.userId;
-
     if (!isOwner && !isStaff(req)) {
       if (req.file) await deleteFile(req.file.path);
       logger.warn(`Nieautoryzowana próba edycji ID: ${id} przez User: ${req.user?.userId}`);
@@ -158,21 +172,15 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next: 
       }
     }
 
+    const parsed = AnimalUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      if (req.file) await deleteFile(req.file.path);
+      return res.status(400).json({ error: 'Błędne dane', details: parsed.error.issues });
+    }
+
     const updateData: any = {};
-    if (name) {
-      if (name.length < LIMITS.name.min || name.length > LIMITS.name.max) {
-        if (req.file) await deleteFile(req.file.path);
-        return res.status(400).json({ error: "Nieprawidłowa długość imienia." });
-      }
-      updateData.name = name;
-    }
-    if (description) {
-      if (description.length < LIMITS.desc.min || description.length > LIMITS.desc.max) {
-        if (req.file) await deleteFile(req.file.path);
-        return res.status(400).json({ error: "Nieprawidłowa długość opisu." });
-      }
-      updateData.description = description;
-    }
+    if (parsed.data.name) updateData.name = parsed.data.name;
+    if (parsed.data.description) updateData.description = parsed.data.description;
 
     if (req.file) {
       if (animal.image) await deleteFile(animal.image);
@@ -204,7 +212,6 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
     if (!animal) return res.status(404).json({ error: "Nie znaleziono ogłoszenia" });
 
     const isOwner = animal.userId === req.user?.userId;
-
     if (!isOwner && !isStaff(req)) {
       logger.warn(`Nieautoryzowana próba usunięcia ID: ${id} przez User: ${req.user?.userId}`);
       return res.status(403).json({ error: "Brak uprawnień" });
