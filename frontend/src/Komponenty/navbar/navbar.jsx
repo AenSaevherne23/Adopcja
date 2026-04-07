@@ -4,7 +4,9 @@ import "./navbar.css";
 export default function Navbar() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const rola = localStorage.getItem("rola");
   const zalogowany = !!token;
+  const czyStaff = rola === "MODERATOR" || rola === "ADMIN";
 
   function wyloguj() {
     localStorage.removeItem("token");
@@ -48,6 +50,12 @@ export default function Navbar() {
             <Link to="/otrzymane-wnioski" className="navbar-przycisk">
               Wnioski do moich ogłoszeń
             </Link>
+
+            {czyStaff && (
+              <Link to="/panel-zarzadzania" className="navbar-przycisk">
+                Panel zarządzania
+              </Link>
+            )}
 
             <Link
               to="/dodaj-ogloszenie"

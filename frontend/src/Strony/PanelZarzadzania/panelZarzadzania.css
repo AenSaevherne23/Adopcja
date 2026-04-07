@@ -1,0 +1,210 @@
+.panel-zarzadzania {
+  min-height: 100vh;
+  padding: 110px 24px 30px;
+  background: #0d0f1a;
+  color: #ffffff;
+}
+
+.sekcja-panelu {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.panel-tytul {
+  margin: 0;
+  text-align: center;
+  font-size: 3rem;
+}
+
+.panel-opis {
+  margin: 12px 0 28px;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.zakladki-panelu {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.zakladka {
+  min-width: 140px;
+  height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.zakladka.aktywna {
+  background: #2b6cb0;
+}
+
+.sekcja-zawartosci h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.blad {
+  text-align: center;
+  color: #fc8181;
+}
+
+.lista-panelowa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.karta-panelowa {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ramka-obrazu-panel {
+  width: 100%;
+  max-width: 360px;
+  height: 260px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.obraz-panel {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.meta-panel {
+  opacity: 0.9;
+}
+
+.akcje-panelowe {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.przycisk-akceptuj,
+.przycisk-odrzuc,
+.przycisk-edytuj,
+.przycisk-usun-uzytkownika {
+  min-width: 120px;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.przycisk-akceptuj {
+  background: #2f855a;
+}
+
+.przycisk-akceptuj:hover {
+  background: #276749;
+}
+
+.przycisk-odrzuc,
+.przycisk-usun-uzytkownika {
+  background: #742a2a;
+}
+
+.przycisk-odrzuc:hover,
+.przycisk-usun-uzytkownika:hover {
+  background: #5f2121;
+}
+
+.przycisk-edytuj {
+  background: #2b6cb0;
+}
+
+.przycisk-edytuj:hover {
+  background: #245a96;
+}
+
+.status {
+  min-width: 160px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.status-approved {
+  background: #276749;
+}
+
+.status-rejected {
+  background: #742a2a;
+}
+
+.status-pending {
+  background: #975a16;
+}
+
+.lista-uzytkownikow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.karta-uzytkownika {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wiersz-uzytkownika {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.etykieta {
+  font-weight: 700;
+}
+
+.akcje-admina {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.select-roli {
+  height: 42px;
+  border-radius: 10px;
+  border: none;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.select-roli option {
+  color: #000000;
+}

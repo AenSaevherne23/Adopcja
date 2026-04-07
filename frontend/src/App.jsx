@@ -7,6 +7,7 @@ import EdytujOgloszenie from "./Strony/EdytujOgloszenie/edytujOgloszenie";
 import MojeWnioski from "./Strony/MojeWnioski/mojeWnioski";
 import OtrzymaneWnioski from "./Strony/OtrzymaneWnioski/otrzymaneWnioski";
 import MojeZgloszenia from "./Strony/MojeZgloszenia/mojeZgloszenia";
+import PanelZarzadzania from "./Strony/PanelZarzadzania/panelZarzadzania";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/moje-wnioski" element={<MojeWnioski />} />
         <Route path="/otrzymane-wnioski" element={<OtrzymaneWnioski />} />
         <Route path="/moje-zgloszenia" element={<MojeZgloszenia />} />
+        <Route path="/panel-zarzadzania" element={<PanelZarzadzania />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,7 +1,6 @@
 export function buildImageUrl(imagePath) {
   if (!imagePath) return "";
 
-  // jeśli backend zwróci pełny URL
   if (
     imagePath.startsWith("http://") ||
     imagePath.startsWith("https://")

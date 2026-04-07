@@ -3,6 +3,7 @@ import Navbar from "../../Komponenty/Navbar/navbar";
 import { expandLink } from "../../fetches/expandLink";
 import { buildImageUrl } from "../../fetches/buildImageUrl";
 import "./home.css";
+import KotyZApi from "../../Komponenty/KotyZApi/kotyZApi";
 
 export default function Home() {
   const [zwierzeta, ustawZwierzeta] = useState([]);
@@ -84,7 +85,6 @@ export default function Home() {
 
       ustawMojeId(idUzytkownika);
     } catch {
-      // brak mojeId nie blokuje działania listy
     }
   }
 
@@ -171,18 +171,36 @@ export default function Home() {
       <Navbar />
 
       <main className="home">
+
+        {/* SEKCJA 1 — wasze ogłoszenia */}
         <section className="home-sekcja">
           <h1 className="home-tytul">Zwierzęta do adopcji</h1>
 
-          {ladowanie && <p className="home-komunikat">Ładowanie danych...</p>}
-          {!ladowanie && blad && <p className="home-komunikat blad">Błąd: {blad}</p>}
-          {!ladowanie && !blad && zwierzetaDoWyswietlenia.length === 0 && (
-            <p className="home-komunikat">Brak dostępnych zwierząt do adopcji.</p>
+          {ladowanie && (
+            <p className="home-komunikat">
+              Ładowanie danych...
+            </p>
           )}
+
+          {!ladowanie && blad && (
+            <p className="home-komunikat blad">
+              Błąd: {blad}
+            </p>
+          )}
+
+          {!ladowanie &&
+            !blad &&
+            zwierzetaDoWyswietlenia.length === 0 && (
+              <p className="home-komunikat">
+                Brak dostępnych zwierząt do adopcji.
+              </p>
+            )}
 
           <div className="lista-zwierzat">
             {zwierzetaDoWyswietlenia.map((zwierze) => {
-              const statusWniosku = znajdzStatusWniosku(zwierze.animal_id);
+              const statusWniosku = znajdzStatusWniosku(
+                zwierze.animal_id
+              );
 
               return (
                 <article
@@ -205,14 +223,21 @@ export default function Home() {
                   {token ? (
                     <div className="akcje-ogloszenia">
                       {statusWniosku ? (
-                        <div className={pobierzKlaseStatusu(statusWniosku)}>
+                        <div
+                          className={pobierzKlaseStatusu(
+                            statusWniosku
+                          )}
+                        >
                           {pobierzTekstStatusu(statusWniosku)}
                         </div>
                       ) : (
                         <button
                           className="przycisk-wniosek"
                           onClick={() =>
-                            zlozWniosek(zwierze.animal_id, zwierze.name)
+                            zlozWniosek(
+                              zwierze.animal_id,
+                              zwierze.name
+                            )
                           }
                         >
                           Złóż wniosek
@@ -225,6 +250,12 @@ export default function Home() {
             })}
           </div>
         </section>
+
+        {/* SEKCJA 2 — koty z API */}
+        <section className="home-sekcja">
+          <KotyZApi />
+        </section>
+
       </main>
     </>
   );

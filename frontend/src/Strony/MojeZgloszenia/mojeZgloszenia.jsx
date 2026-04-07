@@ -99,13 +99,6 @@ export default function MojeZgloszenia() {
     }
   }
 
-    function pobierzPriorytetStatusu(status) {
-    if (status === "pending") return 0;
-    if (status === "approved") return 1;
-    if (status === "rejected") return 2;
-    return 3;
-    }
-
   useEffect(() => {
     async function inicjalizuj() {
       await pobierzMojeId();
