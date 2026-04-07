@@ -22,6 +22,7 @@ CREATE TABLE `users` (
 CREATE TABLE `animals` (
     `animal_id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(50) NOT NULL,
+    `cat_breed` VARCHAR(50) NOT NULL,
     `description` TEXT NOT NULL,
     `image` VARCHAR(255) NOT NULL,
     `is_adopted` BOOLEAN NOT NULL DEFAULT false,
@@ -35,6 +36,7 @@ CREATE TABLE `adoption_requests` (
     `request_id` VARCHAR(191) NOT NULL,
     `animal_id` VARCHAR(191) NOT NULL,
     `user_id` VARCHAR(191) NOT NULL,
+    `motivation` TEXT NOT NULL,
     `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 

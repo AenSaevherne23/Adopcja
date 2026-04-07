@@ -45,6 +45,7 @@ model User {
 model Animal {
   animal_id        String            @id @default(uuid())
   name             String            @db.VarChar(50)
+  cat_breed        String            @db.VarChar(50)
   description      String            @db.Text
   image            String            @db.VarChar(255)
   is_adopted       Boolean           @default(false)
@@ -62,6 +63,7 @@ model AdoptionRequest {
   request_id String         @id @default(uuid())
   animalId   String         @map("animal_id")
   userId     String         @map("user_id")
+  motivation String         @db.Text @map("motivation")
   status     AdoptionStatus @default(pending)
   createdAt  DateTime       @default(now()) @map("created_at")
 

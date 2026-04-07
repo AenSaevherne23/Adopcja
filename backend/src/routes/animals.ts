@@ -14,22 +14,27 @@ const router = Router();
 
 // --- KONFIGURACJA LIMITÓW ---
 const LIMITS = {
-  name: { min: 3, max: 50 },
+  name: { min: 2, max: 50 },
+  breed: { min: 2, max: 50 },
   desc: { min: 10, max: 1000 },
-  fileSize: 5 * 1024 * 1024
+  fileSize: 5 * 1024 * 1024 // 5MB
 };
 
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
-
-// --- WALIDACJA ZOD ---
 const SAFE_TEXT = /^[^<>{}()\[\]'";]*$/;
 
+// --- WALIDACJA ZOD ---
 const AnimalSchema = z.object({
   name: z.string()
     .min(LIMITS.name.min, `Imię musi mieć co najmniej ${LIMITS.name.min} znaki`)
     .max(LIMITS.name.max, `Imię może mieć maksymalnie ${LIMITS.name.max} znaków`)
     .trim()
     .regex(SAFE_TEXT, "Imię zawiera niedozwolone znaki"),
+  cat_breed: z.string()
+    .min(LIMITS.breed.min, `Rasa musi mieć co najmniej ${LIMITS.breed.min} znaki`)
+    .max(LIMITS.breed.max, `Rasa może mieć maksymalnie ${LIMITS.breed.max} znaków`)
+    .trim()
+    .regex(SAFE_TEXT, "Rasa zawiera niedozwolone znaki"),
   description: z.string()
     .min(LIMITS.desc.min, `Opis musi mieć co najmniej ${LIMITS.desc.min} znaków`)
     .max(LIMITS.desc.max, `Opis może mieć maksymalnie ${LIMITS.desc.max} znaków`)
@@ -39,18 +44,17 @@ const AnimalSchema = z.object({
 
 const AnimalUpdateSchema = AnimalSchema.partial();
 
-// --- 1. KONFIGURACJA SKŁADOWANIA ---
+// --- KONFIGURACJA MULTER ---
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `animal-${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 
-// --- 2. MULTER MIDDLEWARE ---
 const upload = multer({
   storage: storage,
   limits: { fileSize: LIMITS.fileSize },
@@ -59,14 +63,16 @@ const upload = multer({
     if (allowedMime.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Nieprawidłowy format pliku (tylko JPG, PNG, WEBP).'));
+      cb(new Error('Nieprawidłowy format pliku (tylko JPG, PNG, WEBP).') as any);
     }
   }
 });
 
+// --- POMOCNIK USUWANIA PLIKÓW ---
 const deleteFile = async (filePath: string) => {
   try {
-    const absolutePath = path.join(process.cwd(), filePath.startsWith('/') ? filePath.substring(1) : filePath);
+    const normalizedPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+    const absolutePath = path.join(process.cwd(), normalizedPath);
     await fs.unlink(absolutePath);
   } catch (err) {
     logger.error(`Błąd podczas usuwania pliku ${filePath}:`, err);
@@ -76,14 +82,9 @@ const deleteFile = async (filePath: string) => {
 /**
  * POST /api/animals
  */
-router.post('/', authenticateToken, (req: AuthRequest, res: Response, next: any) => {
+router.post('/', authenticateToken, (req: AuthRequest, res: Response, next) => {
   upload.single('image')(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Plik jest za duży! Maksymalnie 5MB.' });
-      return res.status(400).json({ error: err.message });
-    } else if (err) {
-      return res.status(400).json({ error: err.message });
-    }
+    if (err) return res.status(400).json({ error: err.message });
     next();
   });
 }, async (req: AuthRequest, res: Response) => {
@@ -93,7 +94,6 @@ router.post('/', authenticateToken, (req: AuthRequest, res: Response, next: any)
     const type = await fileTypeFromFile(req.file.path);
     if (!type || !ALLOWED_EXTENSIONS.includes(type.ext)) {
       await deleteFile(req.file.path);
-      logger.warn(`Niebezpieczny plik odrzucony: ${req.file.originalname} (User: ${req.user?.userId})`);
       return res.status(400).json({ error: 'Przesłany plik nie jest prawdziwym obrazkiem!' });
     }
 
@@ -103,23 +103,20 @@ router.post('/', authenticateToken, (req: AuthRequest, res: Response, next: any)
       return res.status(400).json({ error: 'Błędne dane', details: parsed.error.issues });
     }
 
-    const { name, description } = parsed.data;
-
     const newAnimal = await prisma.animal.create({
       data: {
-        name,
-        description,
+        ...parsed.data,
         image: `/uploads/${req.file.filename}`,
         userId: String(req.user?.userId),
       }
     });
 
-    logger.info(`Nowe ogłoszenie: ${name} (ID: ${newAnimal.animal_id}) dodane przez ${req.user?.userId}`);
+    logger.info(`Dodano: ${newAnimal.name} przez ${req.user?.userId}`);
     res.status(201).json(newAnimal);
   } catch (error) {
     if (req.file) await deleteFile(req.file.path);
     logger.error("Błąd POST /api/animals:", error);
-    res.status(500).json({ error: 'Błąd podczas tworzenia ogłoszenia' });
+    res.status(500).json({ error: 'Błąd serwera' });
   }
 });
 
@@ -134,42 +131,32 @@ router.get('/', async (req, res) => {
     });
     res.json(animals);
   } catch (error) {
-    logger.error("Błąd GET /api/animals:", error);
-    res.status(500).json({ error: "Nie udało się pobrać ogłoszeń" });
+    res.status(500).json({ error: "Błąd pobierania danych" });
   }
 });
 
 /**
  * PATCH /api/animals/:id
  */
-router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next: any) => {
+router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next) => {
   upload.single('image')(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message });
     next();
   });
 }, async (req: AuthRequest, res: Response) => {
   try {
-    const id = req.params.id as string;
+    const { id } = req.params as { id: string };
+    const userId = req.user?.userId;
 
     const animal = await prisma.animal.findUnique({ where: { animal_id: id } });
     if (!animal) {
       if (req.file) await deleteFile(req.file.path);
-      return res.status(404).json({ error: "Nie znaleziono ogłoszenia" });
+      return res.status(404).json({ error: "Nie znaleziono" });
     }
 
-    const isOwner = animal.userId === req.user?.userId;
-    if (!isOwner && !isStaff(req)) {
+    if (animal.userId !== userId && !isStaff(req)) {
       if (req.file) await deleteFile(req.file.path);
-      logger.warn(`Nieautoryzowana próba edycji ID: ${id} przez User: ${req.user?.userId}`);
-      return res.status(403).json({ error: "Brak uprawnień do edycji" });
-    }
-
-    if (req.file) {
-      const type = await fileTypeFromFile(req.file.path);
-      if (!type || !ALLOWED_EXTENSIONS.includes(type.ext)) {
-        await deleteFile(req.file.path);
-        return res.status(400).json({ error: 'Nowy plik nie jest prawdziwym obrazkiem!' });
-      }
+      return res.status(403).json({ error: "Brak uprawnień" });
     }
 
     const parsed = AnimalUpdateSchema.safeParse(req.body);
@@ -178,11 +165,14 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next: 
       return res.status(400).json({ error: 'Błędne dane', details: parsed.error.issues });
     }
 
-    const updateData: any = {};
-    if (parsed.data.name) updateData.name = parsed.data.name;
-    if (parsed.data.description) updateData.description = parsed.data.description;
+    const updateData: any = { ...parsed.data };
 
     if (req.file) {
+      const type = await fileTypeFromFile(req.file.path);
+      if (!type || !ALLOWED_EXTENSIONS.includes(type.ext)) {
+        await deleteFile(req.file.path);
+        return res.status(400).json({ error: 'To nie jest obrazek' });
+      }
       if (animal.image) await deleteFile(animal.image);
       updateData.image = `/uploads/${req.file.filename}`;
     }
@@ -192,12 +182,11 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next: 
       data: updateData
     });
 
-    logger.info(`Zaktualizowano ogłoszenie ID: ${id} przez ${req.user?.userId}`);
     res.json(updatedAnimal);
   } catch (error) {
     if (req.file) await deleteFile(req.file.path);
-    logger.error(`Błąd PATCH /api/animals/${req.params.id}:`, error);
-    res.status(500).json({ error: "Błąd podczas edycji" });
+    logger.error("Błąd PATCH:", error);
+    res.status(500).json({ error: "Błąd serwera" });
   }
 });
 
@@ -206,25 +195,22 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next: 
  */
 router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const id = req.params.id as string;
+    const { id } = req.params as { id: string };
+    const userId = req.user?.userId;
+
     const animal = await prisma.animal.findUnique({ where: { animal_id: id } });
+    if (!animal) return res.status(404).json({ error: "Nie znaleziono" });
 
-    if (!animal) return res.status(404).json({ error: "Nie znaleziono ogłoszenia" });
-
-    const isOwner = animal.userId === req.user?.userId;
-    if (!isOwner && !isStaff(req)) {
-      logger.warn(`Nieautoryzowana próba usunięcia ID: ${id} przez User: ${req.user?.userId}`);
+    if (animal.userId !== userId && !isStaff(req)) {
       return res.status(403).json({ error: "Brak uprawnień" });
     }
 
     if (animal.image) await deleteFile(animal.image);
     await prisma.animal.delete({ where: { animal_id: id } });
 
-    logger.info(`Usunięto ogłoszenie ID: ${id} przez ${req.user?.userId}`);
-    res.json({ message: "Ogłoszenie usunięte" });
+    res.json({ message: "Usunięto" });
   } catch (error) {
-    logger.error(`Błąd DELETE /api/animals/${req.params.id}:`, error);
-    res.status(500).json({ error: "Błąd podczas usuwania" });
+    res.status(500).json({ error: "Błąd serwera" });
   }
 });
 

@@ -8,6 +8,14 @@ import logger from '../lib/logger.js';
 
 const router = Router();
 
+// --- SCHEMATY WALIDACJI ---
+const CreateRequestSchema = z.object({
+  motivation: z.string()
+    .min(10, "Uzasadnienie musi mieć co najmniej 10 znaków")
+    .max(1000, "Uzasadnienie jest za długie")
+    .optional()
+});
+
 const UpdateStatusSchema = z.object({
   status: z.enum(['approved', 'rejected'])
 });
@@ -15,13 +23,17 @@ const UpdateStatusSchema = z.object({
 // ─── 1. WYŚLIJ PROŚBĘ O ADOPCJĘ ─────────────────────────────────────────────
 router.post('/request/:animalId', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { animalId } = req.params;
+    const { animalId } = req.params as { animalId: string };
+    const userId = req.user?.userId;
 
-    if (typeof animalId !== 'string') {
-      return res.status(400).json({ error: "Nieprawidłowy identyfikator zwierzaka" });
+    if (!userId) return res.status(401).json({ error: "Brak autoryzacji" });
+
+    // Walidacja pola motivation z body
+    const parsedBody = CreateRequestSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({ error: parsedBody.error.issues });
     }
 
-    const userId = req.user!.userId;
     const animal = await prisma.animal.findUnique({ where: { animal_id: animalId } });
 
     if (!animal) return res.status(404).json({ error: "Nie znaleziono zwierzaka" });
@@ -33,7 +45,11 @@ router.post('/request/:animalId', authenticateToken, async (req: AuthRequest, re
     }
 
     const request = await prisma.adoptionRequest.create({
-      data: { animalId, userId }
+      data: { 
+        animalId, 
+        userId,
+        motivation: parsedBody.data.motivation // Dodano pole z bazy
+      }
     });
 
     logger.info(`Wysłano prośbę o adopcję: Animal ${animalId} przez User ${userId}`);
@@ -48,8 +64,11 @@ router.post('/request/:animalId', authenticateToken, async (req: AuthRequest, re
 // ─── 2. MOJE WYSŁANE PROŚBY ─────────────────────────────────────────────────
 router.get('/my-sent-requests', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: "Brak autoryzacji" });
+
     const requests = await prisma.adoptionRequest.findMany({
-      where: { userId: req.user!.userId },
+      where: { userId },
       include: { animal: true }
     });
     res.json(requests);
@@ -62,8 +81,11 @@ router.get('/my-sent-requests', authenticateToken, async (req: AuthRequest, res:
 // ─── 3. OTRZYMANE PROŚBY ────────────────────────────────────────────────────
 router.get('/my-received-requests', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: "Brak autoryzacji" });
+
     const requests = await prisma.adoptionRequest.findMany({
-      where: isStaff(req) ? {} : { animal: { userId: req.user!.userId } },
+      where: isStaff(req) ? {} : { animal: { userId } },
       include: {
         animal: true,
         user: { select: { email: true } }
@@ -79,14 +101,17 @@ router.get('/my-received-requests', authenticateToken, async (req: AuthRequest, 
 // ─── 4. DECYZJA O ADOPCJI (AKCEPTACJA/ODRZUCENIE) ───────────────────────────
 router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { requestId } = req.params;
+    // Naprawa błędu ts(2412) przez jawne rzutowanie params
+    const { requestId } = req.params as { requestId: string };
+    const userId = req.user?.userId;
 
-    if (typeof requestId !== 'string') {
-      return res.status(400).json({ error: "Nieprawidłowy identyfikator prośby" });
+    if (!userId) return res.status(401).json({ error: "Brak autoryzacji" });
+
+    const parsedBody = UpdateStatusSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({ error: parsedBody.error.issues });
     }
-
-    const { status } = UpdateStatusSchema.parse(req.body);
-    const userId = req.user!.userId;
+    const { status } = parsedBody.data;
 
     const request = await prisma.adoptionRequest.findUnique({
       where: { request_id: requestId },
@@ -118,6 +143,7 @@ router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, r
           data: { is_adopted: true }
         });
 
+        // Automatyczne odrzucenie innych oczekujących próśb o tego zwierzaka
         await tx.adoptionRequest.updateMany({
           where: {
             animalId: request.animalId,
@@ -132,8 +158,7 @@ router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, r
     logger.info(`Zmieniono status prośby ${requestId} na ${status} przez User ${userId}`);
     res.json({ message: `Status zmieniony na: ${status}` });
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
-    logger.error(`Błąd PATCH /status/${req.params.requestId}:`, error);
+    logger.error(`Błąd PATCH /status:`, error);
     res.status(500).json({ error: "Błąd podczas procesowania decyzji" });
   }
 });
