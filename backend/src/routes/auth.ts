@@ -29,7 +29,7 @@ const RegisterSchema = z.object({
   if (!localPart) return true;
   const segments = localPart.split(/[.\-_]/);
   const password = data.password.toLowerCase();
-  return !segments.some(segment => segment.length > 2 && password.includes(segment));
+  return !segments.some(segment => segment.length > 3 && password.includes(segment));
 }, {
   message: "Hasło nie może zawierać nazwy użytkownika z adresu email",
   path: ["password"]
