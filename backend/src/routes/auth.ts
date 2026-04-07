@@ -18,7 +18,21 @@ const LoginSchema = z.object({
 
 const RegisterSchema = z.object({
   email: z.string().email("Nieprawidłowy email"),
-  password: z.string().min(8, "Hasło musi mieć co najmniej 8 znaków")
+  password: z.string()
+    .min(8, "Hasło musi mieć co najmniej 8 znaków")
+    .regex(/[A-Z]/, "Hasło musi zawierać co najmniej jedną wielką literę")
+    .regex(/[a-z]/, "Hasło musi zawierać co najmniej jedną małą literę")
+    .regex(/[0-9]/, "Hasło musi zawierać co najmniej jedną cyfrę")
+    .regex(/[^A-Za-z0-9]/, "Hasło musi zawierać co najmniej jeden znak specjalny")
+}).refine((data) => {
+  const localPart = data.email?.split('@')[0]?.toLowerCase();
+  if (!localPart) return true;
+  const segments = localPart.split(/[.\-_]/);
+  const password = data.password.toLowerCase();
+  return !segments.some(segment => segment.length > 2 && password.includes(segment));
+}, {
+  message: "Hasło nie może zawierać nazwy użytkownika z adresu email",
+  path: ["password"]
 });
 
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
