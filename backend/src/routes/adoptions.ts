@@ -13,7 +13,6 @@ const CreateRequestSchema = z.object({
   motivation: z.string()
     .min(10, "Uzasadnienie musi mieć co najmniej 10 znaków")
     .max(1000, "Uzasadnienie jest za długie")
-    .optional()
 });
 
 const UpdateStatusSchema = z.object({
