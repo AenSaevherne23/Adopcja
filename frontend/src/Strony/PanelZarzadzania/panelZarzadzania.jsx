@@ -507,26 +507,33 @@ export default function PanelZarzadzania() {
                         <span className="etykieta">Rola:</span>
                         <span>{rolaUzytkownika}</span>
                       </div>
-
                       {czyAdmin && (
                         <div className="akcje-admina">
-                          <select
-                            className="select-roli"
-                            value={rolaUzytkownika}
-                            onChange={(e) =>
-                              zmienRoleUzytkownika(userId, e.target.value)
-                            }
-                          >
-                            <option value="NORMAL_USER">NORMAL_USER</option>
-                            <option value="MODERATOR">MODERATOR</option>
-                          </select>
+                          {rolaUzytkownika === "ADMIN" ? (
+                            <div className="blokada-roli">
+                              Nie można zmieniać uprawnień administratora.
+                            </div>
+                          ) : (
+                            <>
+                              <select
+                                className="select-roli"
+                                value={rolaUzytkownika}
+                                onChange={(e) =>
+                                  zmienRoleUzytkownika(userId, e.target.value)
+                                }
+                              >
+                                <option value="NORMAL_USER">NORMAL_USER</option>
+                                <option value="MODERATOR">MODERATOR</option>
+                              </select>
 
-                          <button
-                            className="przycisk-usun-uzytkownika"
-                            onClick={() => usunUzytkownika(userId, email)}
-                          >
-                            Usuń użytkownika
-                          </button>
+                              <button
+                                className="przycisk-usun-uzytkownika"
+                                onClick={() => usunUzytkownika(userId, email)}
+                              >
+                                Usuń użytkownika
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </article>
