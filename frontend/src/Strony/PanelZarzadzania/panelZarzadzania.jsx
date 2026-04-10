@@ -519,7 +519,6 @@ export default function PanelZarzadzania() {
                           >
                             <option value="NORMAL_USER">NORMAL_USER</option>
                             <option value="MODERATOR">MODERATOR</option>
-                            <option value="ADMIN">ADMIN</option>
                           </select>
 
                           <button
