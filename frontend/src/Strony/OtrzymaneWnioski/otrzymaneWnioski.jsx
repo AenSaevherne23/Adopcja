@@ -4,19 +4,26 @@ import { expandLink } from "../../fetches/expandLink";
 import { buildImageUrl } from "../../fetches/buildImageUrl";
 import "./otrzymaneWnioski.css";
 
+function pobierzTekstStatusu(status) {
+  if (status === "pending") return "Oczekuje";
+  if (status === "approved") return "Zaakceptowano";
+  if (status === "rejected") return "Odrzucono";
+  return status;
+}
+
+function pobierzPriorytetStatusu(status) {
+  if (status === "pending") return 0;
+  if (status === "approved") return 1;
+  if (status === "rejected") return 2;
+  return 3;
+}
+
 export default function OtrzymaneWnioski() {
   const [wnioski, ustawWnioski] = useState([]);
   const [ladowanie, ustawLadowanie] = useState(true);
   const [blad, ustawBlad] = useState("");
 
   const token = localStorage.getItem("token");
-
-  function pobierzTekstStatusu(status) {
-    if (status === "pending") return "Oczekuje";
-    if (status === "approved") return "Zaakceptowano";
-    if (status === "rejected") return "Odrzucono";
-    return status;
-  }
 
   async function pobierzWnioski() {
     try {
@@ -36,18 +43,15 @@ export default function OtrzymaneWnioski() {
       }
 
       const dane = await odpowiedz.json();
-
       const lista = Array.isArray(dane) ? dane : [];
 
       const posortowane = [...lista].sort((a, b) => {
-      const statusA = a.status || "pending";
-      const statusB = b.status || "pending";
+        const statusA = a.status || "pending";
+        const statusB = b.status || "pending";
+        return pobierzPriorytetStatusu(statusA) - pobierzPriorytetStatusu(statusB);
+      });
 
-      return pobierzPriorytetStatusu(statusA) - pobierzPriorytetStatusu(statusB);
-    });
-
-    ustawWnioski(posortowane);
-
+      ustawWnioski(posortowane);
     } catch (bladPobierania) {
       ustawBlad(bladPobierania.message);
     } finally {
@@ -66,7 +70,7 @@ export default function OtrzymaneWnioski() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            status: status,
+            status,
           }),
         }
       );
@@ -79,7 +83,7 @@ export default function OtrzymaneWnioski() {
       }
 
       if (!odpowiedz.ok) {
-        throw new Error(dane?.message || "Nie udało się zmienić statusu.");
+        throw new Error(dane?.error || dane?.message || "Nie udało się zmienić statusu.");
       }
 
       await pobierzWnioski();
@@ -87,13 +91,6 @@ export default function OtrzymaneWnioski() {
       alert(bladZmiany.message);
     }
   }
-
-    function pobierzPriorytetStatusu(status) {
-    if (status === "pending") return 0;
-    if (status === "approved") return 1;
-    if (status === "rejected") return 2;
-    return 3;
-    }
 
   useEffect(() => {
     pobierzWnioski();
@@ -128,6 +125,13 @@ export default function OtrzymaneWnioski() {
                 wniosek.animalName ||
                 "Brak nazwy";
 
+              const rasa =
+                zwierze.cat_breed ||
+                zwierze.breed ||
+                wniosek.cat_breed ||
+                wniosek.breed ||
+                "Nie podano";
+
               const opis =
                 zwierze.description ||
                 wniosek.animalDescription ||
@@ -148,6 +152,11 @@ export default function OtrzymaneWnioski() {
                 wniosek.user?.email ||
                 "Nieznany użytkownik";
 
+              const uzasadnienie =
+                wniosek.motivation ||
+                wniosek.uzasadnienie ||
+                "";
+
               return (
                 <article
                   className="karta"
@@ -163,16 +172,27 @@ export default function OtrzymaneWnioski() {
                     </div>
                   )}
 
-                  <h2>{nazwa}</h2>
+                  <h2>Imię: {nazwa}</h2>
 
                   <p className="opis">
-                    {opis}
+                    <strong>Rasa:</strong> {rasa}
+                  </p>
+
+                  <p className="opis">
+                    <strong>Opis:</strong> {opis}
                   </p>
 
                   <p className="uzytkownik">
                     Wniosek od:
                     <strong> {userEmail}</strong>
                   </p>
+
+                  {uzasadnienie && (
+                    <div className="blok-uzasadnienia">
+                      <h3>Uzasadnienie adopcji</h3>
+                      <p>{uzasadnienie}</p>
+                    </div>
+                  )}
 
                   <div className="akcje">
                     {status === "pending" ? (

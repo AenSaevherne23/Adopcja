@@ -140,7 +140,7 @@ export default function PanelZarzadzania() {
       }
 
       if (!odpowiedz.ok) {
-        throw new Error(dane?.message || "Nie udało się zmienić statusu.");
+        throw new Error(dane?.error || dane?.message || "Nie udało się zmienić statusu.");
       }
 
       await pobierzWnioski();
@@ -173,7 +173,7 @@ export default function PanelZarzadzania() {
       }
 
       if (!odpowiedz.ok) {
-        throw new Error(dane?.message || "Nie udało się usunąć ogłoszenia.");
+        throw new Error(dane?.error || dane?.message || "Nie udało się usunąć ogłoszenia.");
       }
 
       await pobierzOgloszenia();
@@ -203,7 +203,7 @@ export default function PanelZarzadzania() {
       }
 
       if (!odpowiedz.ok) {
-        throw new Error(dane?.message || "Nie udało się zmienić roli.");
+        throw new Error(dane?.error || dane?.message || "Nie udało się zmienić roli.");
       }
 
       await pobierzUzytkownikow();
@@ -235,7 +235,7 @@ export default function PanelZarzadzania() {
       }
 
       if (!odpowiedz.ok) {
-        throw new Error(dane?.message || "Nie udało się usunąć użytkownika.");
+        throw new Error(dane?.error || dane?.message || "Nie udało się usunąć użytkownika.");
       }
 
       await pobierzUzytkownikow();
@@ -322,10 +322,19 @@ export default function PanelZarzadzania() {
                     zwierze.name ||
                     wniosek.animalName ||
                     "Brak nazwy";
+
+                  const rasa =
+                    zwierze.cat_breed ||
+                    zwierze.breed ||
+                    wniosek.cat_breed ||
+                    wniosek.breed ||
+                    "Nie podano";
+
                   const opis =
                     zwierze.description ||
                     wniosek.animalDescription ||
                     "";
+
                   const obraz =
                     zwierze.image ||
                     wniosek.animalImage ||
@@ -336,6 +345,10 @@ export default function PanelZarzadzania() {
                     wniosek.email ||
                     wniosek.user?.email ||
                     "Nieznany użytkownik";
+                  const uzasadnienie =
+                    wniosek.motivation ||
+                    wniosek.uzasadnienie ||
+                    "";
 
                   return (
                     <article className="karta-panelowa" key={requestId}>
@@ -349,11 +362,19 @@ export default function PanelZarzadzania() {
                         </div>
                       )}
 
-                      <h3>{nazwa}</h3>
-                      <p>{opis}</p>
+                      <h3>Imię: {nazwa}</h3>
+                      <p><strong>Rasa:</strong> {rasa}</p>
+                      <p><strong>Opis:</strong> {opis}</p>
                       <p className="meta-panel">
                         Wniosek od: <strong>{userEmail}</strong>
                       </p>
+
+                      {uzasadnienie && (
+                        <div className="blok-uzasadnienia-panel">
+                          <h4>Uzasadnienie adopcji</h4>
+                          <p>{uzasadnienie}</p>
+                        </div>
+                      )}
 
                       <div className="akcje-panelowe">
                         {status === "pending" ? (
@@ -402,8 +423,14 @@ export default function PanelZarzadzania() {
               )}
 
               <div className="lista-panelowa">
-                {ogloszenia.map((zwierze) => (
-                  <article className="karta-panelowa" key={zwierze.animal_id}>
+                {ogloszenia.map((zwierze) => {
+                  const rasa =
+                    zwierze.cat_breed ||
+                    zwierze.breed ||
+                    "Nie podano";
+
+                  return (
+                    <article className="karta-panelowa" key={zwierze.animal_id}>
                     {zwierze.image && (
                       <div className="ramka-obrazu-panel">
                         <img
@@ -414,8 +441,9 @@ export default function PanelZarzadzania() {
                       </div>
                     )}
 
-                    <h3>{zwierze.name}</h3>
-                    <p>{zwierze.description}</p>
+                    <h3>Imię: {zwierze.name}</h3>
+                    <p><strong>Rasa:</strong> {rasa}</p>
+                    <p><strong>Opis:</strong> {zwierze.description}</p>
 
                     <div className="akcje-panelowe">
                       <button
@@ -437,7 +465,8 @@ export default function PanelZarzadzania() {
                       </button>
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

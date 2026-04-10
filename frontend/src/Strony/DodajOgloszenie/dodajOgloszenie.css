@@ -35,7 +35,8 @@
 }
 
 .formularz-dodawania input,
-.formularz-dodawania textarea {
+.formularz-dodawania textarea,
+.formularz-dodawania select {
   width: 100%;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -86,4 +87,16 @@
 .komunikat-poprawny {
   margin: 0;
   color: #68d391;
+}
+
+.formularz-dodawania select {
+  height: 44px;
+}
+
+.formularz-dodawania select option {
+  color: #000000;
+}
+
+.komunikat-blad p {
+  margin: 4px 0;
 }

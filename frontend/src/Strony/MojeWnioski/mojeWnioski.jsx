@@ -4,26 +4,33 @@ import { expandLink } from "../../fetches/expandLink";
 import { buildImageUrl } from "../../fetches/buildImageUrl";
 import "./mojeWnioski.css";
 
+function pobierzTekstStatusu(status) {
+  if (status === "pending") return "Oczekuje";
+  if (status === "approved") return "Zaakceptowano";
+  if (status === "rejected") return "Odrzucono";
+  return status;
+}
+
+function pobierzKlaseStatusu(status) {
+  if (status === "pending") return "status status-oczekuje";
+  if (status === "approved") return "status status-zaakceptowano";
+  if (status === "rejected") return "status status-odrzucono";
+  return "status";
+}
+
+function pobierzPriorytetStatusu(status) {
+  if (status === "pending") return 0;
+  if (status === "approved") return 1;
+  if (status === "rejected") return 2;
+  return 3;
+}
+
 export default function MojeWnioski() {
   const [wnioski, ustawWnioski] = useState([]);
   const [ladowanie, ustawLadowanie] = useState(true);
   const [blad, ustawBlad] = useState("");
 
   const token = localStorage.getItem("token");
-
-  function pobierzTekstStatusu(status) {
-    if (status === "pending") return "Oczekuje";
-    if (status === "approved") return "Zaakceptowano";
-    if (status === "rejected") return "Odrzucono";
-    return status;
-  }
-
-  function pobierzKlaseStatusu(status) {
-    if (status === "pending") return "status status-oczekuje";
-    if (status === "approved") return "status status-zaakceptowano";
-    if (status === "rejected") return "status status-odrzucono";
-    return "status";
-  }
 
   useEffect(() => {
     async function pobierzWnioski() {
@@ -50,7 +57,15 @@ export default function MojeWnioski() {
         }
 
         const dane = await odpowiedz.json();
-        ustawWnioski(Array.isArray(dane) ? dane : []);
+        const lista = Array.isArray(dane) ? dane : [];
+
+        const posortowane = [...lista].sort((a, b) => {
+          const statusA = a.status || "pending";
+          const statusB = b.status || "pending";
+          return pobierzPriorytetStatusu(statusA) - pobierzPriorytetStatusu(statusB);
+        });
+
+        ustawWnioski(posortowane);
       } catch (bladPobierania) {
         ustawBlad(bladPobierania.message);
       } finally {
@@ -80,6 +95,7 @@ export default function MojeWnioski() {
           <div className="lista-wnioskow">
             {wnioski.map((wniosek) => {
               const requestId = wniosek.request_id || wniosek.requestId;
+
               const zwierze =
                 wniosek.animal ||
                 wniosek.zwierze ||
@@ -90,6 +106,13 @@ export default function MojeWnioski() {
                 wniosek.animalName ||
                 wniosek.name ||
                 "Brak nazwy";
+
+              const rasa =
+                zwierze.cat_breed ||
+                zwierze.breed ||
+                wniosek.cat_breed ||
+                wniosek.breed ||
+                "Nie podano";
 
               const opis =
                 zwierze.description ||
@@ -104,6 +127,10 @@ export default function MojeWnioski() {
                 "";
 
               const status = wniosek.status || "pending";
+              const uzasadnienie =
+                wniosek.motivation ||
+                wniosek.uzasadnienie ||
+                "";
 
               return (
                 <article className="karta-wniosku" key={requestId}>
@@ -117,8 +144,16 @@ export default function MojeWnioski() {
                     </div>
                   )}
 
-                  <h2>{nazwa}</h2>
-                  <p>{opis}</p>
+                  <h2>Imię: {nazwa}</h2>
+                  <p><strong>Rasa:</strong> {rasa}</p>
+                  <p><strong>Opis:</strong> {opis}</p>
+
+                  {uzasadnienie && (
+                    <div className="blok-uzasadnienia">
+                      <h3>Twoje uzasadnienie</h3>
+                      <p>{uzasadnienie}</p>
+                    </div>
+                  )}
 
                   <div className={pobierzKlaseStatusu(status)}>
                     {pobierzTekstStatusu(status)}

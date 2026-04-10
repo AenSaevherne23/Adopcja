@@ -3,23 +3,117 @@ import { useNavigate, Link } from "react-router-dom";
 import { expandLink } from "../../fetches/expandLink";
 import "./rejestracja.css";
 
+function czyPoprawnyEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function pobierzBledyZBackendu(dane) {
+  if (!dane) {
+    return ["Wystąpił błąd."];
+  }
+
+  if (typeof dane.error === "string") {
+    return [dane.error];
+  }
+
+  if (Array.isArray(dane.error)) {
+    return dane.error.map((element) => element.message || "Błędne dane");
+  }
+
+  if (Array.isArray(dane.details)) {
+    return dane.details.map((element) => element.message || "Błędne dane");
+  }
+
+  if (typeof dane.message === "string") {
+    return [dane.message];
+  }
+
+  return ["Wystąpił błąd."];
+}
+
+function walidujHaslo(email, haslo) {
+  const bledy = [];
+
+  if (haslo.length < 8) {
+    bledy.push("Hasło musi mieć co najmniej 8 znaków");
+  }
+
+  if (!/[A-Z]/.test(haslo)) {
+    bledy.push("Hasło musi zawierać co najmniej jedną wielką literę");
+  }
+
+  if (!/[a-z]/.test(haslo)) {
+    bledy.push("Hasło musi zawierać co najmniej jedną małą literę");
+  }
+
+  if (!/[0-9]/.test(haslo)) {
+    bledy.push("Hasło musi zawierać co najmniej jedną cyfrę");
+  }
+
+  if (!/[^A-Za-z0-9]/.test(haslo)) {
+    bledy.push("Hasło musi zawierać co najmniej jeden znak specjalny");
+  }
+
+  const lokalnaCzesc = email?.split("@")[0]?.toLowerCase();
+
+  if (lokalnaCzesc) {
+    const segmenty = lokalnaCzesc.split(/[.\-_]/);
+    const hasloMaleLitery = haslo.toLowerCase();
+
+    const zawieraNazweUzytkownika = segmenty.some(
+      (segment) => segment.length > 3 && hasloMaleLitery.includes(segment)
+    );
+
+    if (zawieraNazweUzytkownika) {
+      bledy.push("Hasło nie może zawierać nazwy użytkownika z adresu email");
+    }
+  }
+
+  return bledy;
+}
+
+function walidujRejestracje(email, haslo, powtorzHaslo) {
+  const bledy = [];
+  const emailPrzycięty = email.trim();
+
+  if (!czyPoprawnyEmail(emailPrzycięty)) {
+    bledy.push("Nieprawidłowy email");
+  }
+
+  bledy.push(...walidujHaslo(emailPrzycięty, haslo));
+
+  if (haslo !== powtorzHaslo) {
+    bledy.push("Hasła nie są takie same.");
+  }
+
+  return bledy;
+}
+
 export default function Rejestracja() {
   const navigate = useNavigate();
 
   const [email, ustawEmail] = useState("");
   const [haslo, ustawHaslo] = useState("");
   const [powtorzHaslo, ustawPowtorzHaslo] = useState("");
-  const [blad, ustawBlad] = useState("");
+  const [bledy, ustawBledy] = useState([]);
   const [wiadomosc, ustawWiadomosc] = useState("");
   const [ladowanie, ustawLadowanie] = useState(false);
 
   async function obsluzRejestracje(e) {
     e.preventDefault();
-    ustawBlad("");
+
+    ustawBledy([]);
     ustawWiadomosc("");
 
-    if (haslo !== powtorzHaslo) {
-      ustawBlad("Hasła nie są takie same.");
+    const emailPrzycięty = email.trim();
+    const bledyWalidacji = walidujRejestracje(
+      emailPrzycięty,
+      haslo,
+      powtorzHaslo
+    );
+
+    if (bledyWalidacji.length > 0) {
+      ustawBledy(bledyWalidacji);
       return;
     }
 
@@ -32,7 +126,7 @@ export default function Rejestracja() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
+          email: emailPrzycięty,
           password: haslo,
         }),
       });
@@ -40,16 +134,17 @@ export default function Rejestracja() {
       const dane = await odpowiedz.json();
 
       if (!odpowiedz.ok) {
-        throw new Error(dane.message || "Nie udało się utworzyć konta.");
+        ustawBledy(pobierzBledyZBackendu(dane));
+        return;
       }
 
-      ustawWiadomosc("Konto zostało utworzone.");
+      ustawWiadomosc("Konto zostało utworzone pomyślnie");
 
       setTimeout(() => {
         navigate("/logowanie");
       }, 1000);
-    } catch (bladRejestracji) {
-      ustawBlad(bladRejestracji.message);
+    } catch {
+      ustawBledy(["Nie udało się połączyć z serwerem."]);
     } finally {
       ustawLadowanie(false);
     }
@@ -91,7 +186,14 @@ export default function Rejestracja() {
             />
           </label>
 
-          {blad && <p className="komunikat-blad">{blad}</p>}
+          {bledy.length > 0 && (
+            <div className="komunikat-blad">
+              {bledy.map((blad, index) => (
+                <p key={index}>{blad}</p>
+              ))}
+            </div>
+          )}
+
           {wiadomosc && <p className="komunikat-poprawny">{wiadomosc}</p>}
 
           <button type="submit" disabled={ladowanie}>

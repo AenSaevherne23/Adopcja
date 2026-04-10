@@ -125,7 +125,13 @@ export default function MojeZgloszenia() {
           )}
 
           <div className="lista-zgloszen">
-            {mojeZwierzetta.map((zwierze) => (
+          {mojeZwierzetta.map((zwierze) => {
+            const rasa =
+              zwierze.cat_breed ||
+              zwierze.breed ||
+              "Nie podano";
+
+            return (
               <article className="karta-zgloszenia" key={zwierze.animal_id}>
                 {zwierze.image && (
                   <div className="ramka-obrazu">
@@ -137,8 +143,9 @@ export default function MojeZgloszenia() {
                   </div>
                 )}
 
-                <h2>{zwierze.name}</h2>
-                <p>{zwierze.description}</p>
+                <h2>Imię: {zwierze.name}</h2>
+                <p><strong>Rasa:</strong> {rasa}</p>
+                <p><strong>Opis:</strong> {zwierze.description}</p>
 
                 <div className="akcje-ogloszenia">
                   <button
@@ -162,7 +169,8 @@ export default function MojeZgloszenia() {
                   </button>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
       </main>

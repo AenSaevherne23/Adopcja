@@ -5,12 +5,56 @@ import { buildImageUrl } from "../../fetches/buildImageUrl";
 import "./home.css";
 import KotyZApi from "../../Komponenty/KotyZApi/kotyZApi";
 
+function pobierzBledyZBackendu(dane) {
+  if (!dane) {
+    return ["Wystąpił błąd."];
+  }
+
+  if (typeof dane.error === "string") {
+    return [dane.error];
+  }
+
+  if (Array.isArray(dane.error)) {
+    return dane.error.map((element) => element.message || "Błędne dane");
+  }
+
+  if (Array.isArray(dane.details)) {
+    return dane.details.map((element) => element.message || "Błędne dane");
+  }
+
+  if (typeof dane.message === "string") {
+    return [dane.message];
+  }
+
+  return ["Wystąpił błąd."];
+}
+
+function walidujUzasadnienie(uzasadnienie) {
+  const bledy = [];
+  const tekst = uzasadnienie.trim();
+
+  if (tekst.length < 10) {
+    bledy.push("Uzasadnienie musi mieć co najmniej 10 znaków");
+  }
+
+  if (tekst.length > 1000) {
+    bledy.push("Uzasadnienie jest za długie");
+  }
+
+  return bledy;
+}
+
 export default function Home() {
   const [zwierzeta, ustawZwierzeta] = useState([]);
   const [ladowanie, ustawLadowanie] = useState(true);
   const [blad, ustawBlad] = useState("");
   const [mojeId, ustawMojeId] = useState(null);
   const [mojeWnioski, ustawMojeWnioski] = useState([]);
+
+  const [otwartyFormularzId, ustawOtwartyFormularzId] = useState(null);
+  const [uzasadnienie, ustawUzasadnienie] = useState("");
+  const [bledyWniosku, ustawBledyWniosku] = useState([]);
+  const [ladowanieWniosku, ustawLadowanieWniosku] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -112,14 +156,32 @@ export default function Home() {
     }
   }
 
-  async function zlozWniosek(animalId, nazwa) {
+  function otworzFormularzWniosku(animalId) {
+    ustawOtwartyFormularzId(animalId);
+    ustawUzasadnienie("");
+    ustawBledyWniosku([]);
+  }
+
+  function anulujWniosek() {
+    ustawOtwartyFormularzId(null);
+    ustawUzasadnienie("");
+    ustawBledyWniosku([]);
+  }
+
+  async function zlozWniosek(animalId) {
     if (!token) return;
 
-    const potwierdzenie = window.confirm(
-      `Czy chcesz złożyć wniosek o adopcję zwierzęcia "${nazwa}"?`
-    );
+    ustawBledyWniosku([]);
 
-    if (!potwierdzenie) return;
+    const uzasadnieniePrzycięte = uzasadnienie.trim();
+    const bledyWalidacji = walidujUzasadnienie(uzasadnieniePrzycięte);
+
+    if (bledyWalidacji.length > 0) {
+      ustawBledyWniosku(bledyWalidacji);
+      return;
+    }
+
+    ustawLadowanieWniosku(true);
 
     try {
       const odpowiedz = await fetch(
@@ -128,24 +190,29 @@ export default function Home() {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            motivation: uzasadnieniePrzycięte,
+          }),
         }
       );
 
-      let dane = null;
-      const typTresci = odpowiedz.headers.get("content-type") || "";
-
-      if (typTresci.includes("application/json")) {
-        dane = await odpowiedz.json();
-      }
+      const dane = await odpowiedz.json();
 
       if (!odpowiedz.ok) {
-        throw new Error(dane?.message || "Nie udało się złożyć wniosku.");
+        ustawBledyWniosku(pobierzBledyZBackendu(dane));
+        return;
       }
 
       await pobierzMojeWnioski();
-    } catch (bladWniosku) {
-      alert(bladWniosku.message);
+      ustawOtwartyFormularzId(null);
+      ustawUzasadnienie("");
+      ustawBledyWniosku([]);
+    } catch {
+      ustawBledyWniosku(["Nie udało się połączyć z serwerem."]);
+    } finally {
+      ustawLadowanieWniosku(false);
     }
   }
 
@@ -171,8 +238,6 @@ export default function Home() {
       <Navbar />
 
       <main className="home">
-
-        {/* SEKCJA 1 — wasze ogłoszenia */}
         <section className="home-sekcja">
           <h1 className="home-tytul">Zwierzęta do adopcji</h1>
 
@@ -202,6 +267,14 @@ export default function Home() {
                 zwierze.animal_id
               );
 
+              const czyOtwartyFormularz =
+                otwartyFormularzId === zwierze.animal_id;
+
+              const rasa =
+                zwierze.cat_breed ||
+                zwierze.breed ||
+                "Nie podano";
+
               return (
                 <article
                   className="karta-zwierzecia"
@@ -217,8 +290,9 @@ export default function Home() {
                     </div>
                   )}
 
-                  <h2>{zwierze.name}</h2>
-                  <p>{zwierze.description}</p>
+                  <h2>Imię: {zwierze.name}</h2>
+                  <p><strong>Rasa:</strong> {rasa}</p>
+                  <p><strong>Opis:</strong> {zwierze.description}</p>
 
                   {token ? (
                     <div className="akcje-ogloszenia">
@@ -234,10 +308,7 @@ export default function Home() {
                         <button
                           className="przycisk-wniosek"
                           onClick={() =>
-                            zlozWniosek(
-                              zwierze.animal_id,
-                              zwierze.name
-                            )
+                            otworzFormularzWniosku(zwierze.animal_id)
                           }
                         >
                           Złóż wniosek
@@ -245,17 +316,60 @@ export default function Home() {
                       )}
                     </div>
                   ) : null}
+
+                  {czyOtwartyFormularz && (
+                    <div className="formularz-wniosku">
+                      <label>
+                        Dlaczego chcesz adoptować tego zwierzaka?
+                        <textarea
+                          value={uzasadnienie}
+                          onChange={(e) => ustawUzasadnienie(e.target.value)}
+                          rows="5"
+                          maxLength={1000}
+                          placeholder="Napisz kilka zdań uzasadnienia..."
+                        />
+                      </label>
+
+                      <p className="licznik-znakow">
+                        {uzasadnienie.trim().length}/1000
+                      </p>
+
+                      {bledyWniosku.length > 0 && (
+                        <div className="komunikat-blad">
+                          {bledyWniosku.map((bladElement, index) => (
+                            <p key={index}>{bladElement}</p>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="akcje-formularza-wniosku">
+                        <button
+                          className="przycisk-wniosek"
+                          onClick={() => zlozWniosek(zwierze.animal_id)}
+                          disabled={ladowanieWniosku}
+                        >
+                          {ladowanieWniosku ? "Wysyłanie..." : "Wyślij wniosek"}
+                        </button>
+
+                        <button
+                          className="przycisk-anuluj-wniosek"
+                          onClick={anulujWniosek}
+                          disabled={ladowanieWniosku}
+                        >
+                          Anuluj
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </article>
               );
             })}
           </div>
         </section>
 
-        {/* SEKCJA 2 — koty z API */}
         <section className="home-sekcja">
           <KotyZApi />
         </section>
-
       </main>
     </>
   );

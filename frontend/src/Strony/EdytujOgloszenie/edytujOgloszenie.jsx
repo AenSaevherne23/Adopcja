@@ -1,9 +1,78 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../Komponenty/Navbar/navbar";
 import { expandLink } from "../../fetches/expandLink";
 import { buildImageUrl } from "../../fetches/buildImageUrl";
+import { pobierzRasyKotow } from "../../fetches/pobierzRasyKotow";
 import "./edytujOgloszenie.css";
+
+const DOZWOLONE_TYPY_PLIKOW = ["image/jpeg", "image/png", "image/webp"];
+const MAKSYMALNY_ROZMIAR_PLIKU = 5 * 1024 * 1024;
+
+function zawieraNiedozwoloneZnaki(tekst) {
+  return /[<>{}()[\]'";]/.test(tekst);
+}
+
+function pobierzBledyZBackendu(dane) {
+  if (!dane) {
+    return ["Wystąpił błąd."];
+  }
+
+  if (typeof dane.error === "string") {
+    return [dane.error];
+  }
+
+  if (Array.isArray(dane.error)) {
+    return dane.error.map((element) => element.message || "Błędne dane");
+  }
+
+  if (Array.isArray(dane.details)) {
+    return dane.details.map((element) => element.message || "Błędne dane");
+  }
+
+  if (typeof dane.message === "string") {
+    return [dane.message];
+  }
+
+  return ["Wystąpił błąd."];
+}
+
+function walidujZdjecie(plik) {
+  const bledy = [];
+
+  if (!plik) {
+    return bledy;
+  }
+
+  if (!DOZWOLONE_TYPY_PLIKOW.includes(plik.type)) {
+    bledy.push("Nieprawidłowy format pliku (tylko JPG, PNG, WEBP).");
+  }
+
+  if (plik.size > MAKSYMALNY_ROZMIAR_PLIKU) {
+    bledy.push("Zdjęcie może mieć maksymalnie 5 MB.");
+  }
+
+  return bledy;
+}
+
+function walidujPoleTekstowe(wartosc, nazwaPola, minimum, maksimum) {
+  const bledy = [];
+  const tekst = wartosc.trim();
+
+  if (tekst.length < minimum) {
+    bledy.push(`${nazwaPola} musi mieć co najmniej ${minimum} znaki`);
+  }
+
+  if (tekst.length > maksimum) {
+    bledy.push(`${nazwaPola} może mieć maksymalnie ${maksimum} znaków`);
+  }
+
+  if (zawieraNiedozwoloneZnaki(tekst)) {
+    bledy.push(`${nazwaPola} zawiera niedozwolone znaki`);
+  }
+
+  return bledy;
+}
 
 export default function EdytujOgloszenie() {
   const location = useLocation();
@@ -12,12 +81,39 @@ export default function EdytujOgloszenie() {
 
   const [nazwa, ustawNazwa] = useState(zwierze?.name || "");
   const [opis, ustawOpis] = useState(zwierze?.description || "");
+  const [rasaKota, ustawRasaKota] = useState(
+    zwierze?.cat_breed || zwierze?.breed || ""
+  );
   const [zdjecie, ustawZdjecie] = useState(null);
-  const [blad, ustawBlad] = useState("");
+
+  const [rasyKotow, ustawRasyKotow] = useState([]);
+  const [ladowanieRas, ustawLadowanieRas] = useState(true);
+
+  const [bledy, ustawBledy] = useState([]);
   const [wiadomosc, ustawWiadomosc] = useState("");
   const [ladowanie, ustawLadowanie] = useState(false);
 
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    async function zaladujRasyKotow() {
+      try {
+        const dane = await pobierzRasyKotow();
+
+        const posortowaneRasy = [...dane].sort((a, b) =>
+          (a.name || "").localeCompare(b.name || "")
+        );
+
+        ustawRasyKotow(posortowaneRasy);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        ustawLadowanieRas(false);
+      }
+    }
+
+    zaladujRasyKotow();
+  }, []);
 
   if (!zwierze) {
     return (
@@ -35,23 +131,31 @@ export default function EdytujOgloszenie() {
 
   async function obsluzEdycje(e) {
     e.preventDefault();
-    ustawBlad("");
+
+    ustawBledy([]);
     ustawWiadomosc("");
 
     if (!token) {
-      ustawBlad("Musisz być zalogowany.");
+      ustawBledy(["Musisz być zalogowany."]);
+      return;
+    }
+
+    const bledyWalidacji = [
+      ...walidujPoleTekstowe(nazwa, "Imię", 2, 50),
+      ...walidujPoleTekstowe(rasaKota, "Rasa", 2, 50),
+      ...walidujPoleTekstowe(opis, "Opis", 10, 1000),
+      ...walidujZdjecie(zdjecie),
+    ];
+
+    if (bledyWalidacji.length > 0) {
+      ustawBledy(bledyWalidacji);
       return;
     }
 
     const daneFormularza = new FormData();
-
-    if (nazwa.trim()) {
-      daneFormularza.append("name", nazwa);
-    }
-
-    if (opis.trim()) {
-      daneFormularza.append("description", opis);
-    }
+    daneFormularza.append("name", nazwa.trim());
+    daneFormularza.append("cat_breed", rasaKota.trim());
+    daneFormularza.append("description", opis.trim());
 
     if (zdjecie) {
       daneFormularza.append("image", zdjecie);
@@ -82,7 +186,8 @@ export default function EdytujOgloszenie() {
       }
 
       if (!odpowiedz.ok) {
-        throw new Error(dane?.message || "Nie udało się zapisać zmian.");
+        ustawBledy(pobierzBledyZBackendu(dane));
+        return;
       }
 
       ustawWiadomosc("Ogłoszenie zostało zaktualizowane.");
@@ -90,8 +195,8 @@ export default function EdytujOgloszenie() {
       setTimeout(() => {
         navigate("/");
       }, 900);
-    } catch (bladEdycji) {
-      ustawBlad(bladEdycji.message);
+    } catch {
+      ustawBledy(["Nie udało się połączyć z serwerem."]);
     } finally {
       ustawLadowanie(false);
     }
@@ -132,11 +237,31 @@ export default function EdytujOgloszenie() {
             </label>
 
             <label>
+              Rasa kota
+              <select
+                value={rasaKota}
+                onChange={(e) => ustawRasaKota(e.target.value)}
+                disabled={ladowanieRas}
+              >
+                <option value="">
+                  {ladowanieRas ? "Ładowanie ras..." : "Wybierz rasę"}
+                </option>
+
+                {rasyKotow.map((rasa) => (
+                  <option key={rasa.id} value={rasa.name}>
+                    {rasa.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
               Opis
               <textarea
                 value={opis}
                 onChange={(e) => ustawOpis(e.target.value)}
                 rows="6"
+                maxLength={1000}
               />
             </label>
 
@@ -144,15 +269,22 @@ export default function EdytujOgloszenie() {
               Nowe zdjęcie
               <input
                 type="file"
-                accept="image/*"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                 onChange={(e) => ustawZdjecie(e.target.files?.[0] || null)}
               />
             </label>
 
-            {blad && <p className="komunikat-blad">{blad}</p>}
+            {bledy.length > 0 && (
+              <div className="komunikat-blad">
+                {bledy.map((blad, index) => (
+                  <p key={index}>{blad}</p>
+                ))}
+              </div>
+            )}
+
             {wiadomosc && <p className="komunikat-poprawny">{wiadomosc}</p>}
 
-            <button type="submit" disabled={ladowanie}>
+            <button type="submit" disabled={ladowanie || ladowanieRas}>
               {ladowanie ? "Zapisywanie..." : "Zapisz zmiany"}
             </button>
           </form>

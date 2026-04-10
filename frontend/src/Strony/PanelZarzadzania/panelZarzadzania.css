@@ -208,3 +208,22 @@
 .select-roli option {
   color: #000000;
 }
+
+.blok-uzasadnienia-panel {
+  width: 100%;
+  margin: 8px 0 18px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: left;
+}
+
+.blok-uzasadnienia-panel h4 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.blok-uzasadnienia-panel p {
+  margin: 0;
+  line-height: 1.5;
+}
