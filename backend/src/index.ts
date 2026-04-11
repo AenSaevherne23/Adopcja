@@ -2,7 +2,6 @@ import path from 'path';
 import dotenv from 'dotenv';
 import fs from 'fs';
 
-// Ładowanie zmiennych środowiskowych
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 import express, { type Request, type Response, type NextFunction } from 'express';
@@ -18,7 +17,6 @@ import adoptionsRoutes from './routes/adoptions.js';
 
 import logger from './lib/logger.js';
 
-// Upewnij się, że foldery na dane istnieją
 ['uploads', 'logs'].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
@@ -36,13 +34,12 @@ const PORT = process.env.PORT;
 // ─── BEZPIECZEŃSTWO ───────────────────────────────────────────────────────────
 
 app.use(helmet());
-app.use(cors());
 
-/*app.use(cors({
+app.use(cors({
   origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}));*/
+}));
 
 
 // Limit dla "wrażliwych" ścieżek (logowanie, rejestracja)
@@ -68,7 +65,6 @@ app.use(express.json());
 app.use('/api/auth/', authLimiter);
 app.use('/api/', generalLimiter);
 
-
 // Serwowanie plików statycznych (zdjęcia zwierząt)
 app.use('/uploads', express.static('uploads', {
   setHeaders: (res) => {
@@ -90,7 +86,6 @@ app.use('/api/adoptions', adoptionsRoutes);
 // ─── GLOBALNY ERROR HANDLER ───────────────────────────────────────────────────
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  // Logowanie szczegółów do pliku logs/error.log przez Winston
   logger.error({
     message: err.message,
     stack: err.stack,
@@ -99,7 +94,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     ip: req.ip,
   });
 
-  // Dla klienta zwracamy ogólny komunikat (bezpieczeństwo!)
   res.status(500).json({ error: 'Wystąpił wewnętrzny błąd serwera' });
 });
 
