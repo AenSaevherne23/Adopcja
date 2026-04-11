@@ -27,7 +27,6 @@ router.post('/request/:animalId', authenticateToken, async (req: AuthRequest, re
 
     if (!userId) return res.status(401).json({ error: "Brak autoryzacji" });
 
-    // Walidacja pola motivation z body
     const parsedBody = CreateRequestSchema.safeParse(req.body);
     if (!parsedBody.success) {
       return res.status(400).json({ error: parsedBody.error.issues });
@@ -120,7 +119,6 @@ router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, r
 
     if (!request) return res.status(404).json({ error: "Nie znaleziono prośby" });
 
-    // Blokada ponownego rozpatrywania już rozpatrzonej prośby
     if (request.status !== 'pending') {
       return res.status(400).json({ error: "Ta prośba została już rozpatrzona" });
     }

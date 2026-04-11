@@ -61,13 +61,11 @@ router.delete('/:id', authenticateToken, authorize(['ADMIN']), async (req: AuthR
   try {
     const id = req.params.id as string;
 
-    // Blokada usunięcia samego siebie
     if (id === req.user?.userId) {
       logger.warn(`Admin ${req.user?.userId} próbował usunąć samego siebie.`);
       return res.status(400).json({ error: 'Nie możesz usunąć samego siebie.' });
     }
 
-    // Sprawdź czy użytkownik istnieje
     const targetUser = await prisma.user.findUnique({
       where: { user_id: id },
       include: { role: true }
@@ -76,7 +74,6 @@ router.delete('/:id', authenticateToken, authorize(['ADMIN']), async (req: AuthR
       return res.status(404).json({ error: 'Użytkownik nie istnieje.' });
     }
 
-    // Blokada usunięcia innego admina
     if (targetUser.role.name === 'ADMIN') {
       logger.warn(`Admin ${req.user?.userId} próbował usunąć innego admina (${id}).`);
       return res.status(403).json({ error: 'Nie możesz usunąć innego administratora.' });
@@ -104,19 +101,16 @@ router.patch('/:id/role', authenticateToken, authorize(['ADMIN']), async (req: A
     const id = req.params.id as string;
     const { role } = req.body;
 
-    // Blokada zmiany własnej roli
     if (id === req.user?.userId) {
       logger.warn(`Admin ${req.user?.userId} próbował zmienić własną rolę.`);
       return res.status(400).json({ error: 'Nie możesz zmienić własnej roli.' });
     }
 
-    // Admin może nadać tylko MODERATOR lub NORMAL_USER — nie może tworzyć innych adminów
     const validRoles = ['MODERATOR', 'NORMAL_USER'];
     if (!validRoles.includes(role)) {
       return res.status(403).json({ error: 'Możesz nadać maksymalnie rolę MODERATOR.' });
     }
 
-    // Sprawdź czy docelowy użytkownik istnieje
     const targetUser = await prisma.user.findUnique({
       where: { user_id: id },
       include: { role: true }
@@ -125,7 +119,6 @@ router.patch('/:id/role', authenticateToken, authorize(['ADMIN']), async (req: A
       return res.status(404).json({ error: 'Użytkownik nie istnieje.' });
     }
 
-    // Blokada zmiany roli innego admina
     if (targetUser.role.name === 'ADMIN') {
       logger.warn(`Admin ${req.user?.userId} próbował zmienić rolę innego admina (${id}).`);
       return res.status(403).json({ error: 'Nie możesz zmienić uprawnień innego administratora.' });
