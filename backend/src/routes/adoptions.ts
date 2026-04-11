@@ -44,17 +44,19 @@ router.post('/request/:animalId', authenticateToken, async (req: AuthRequest, re
     }
 
     const request = await prisma.adoptionRequest.create({
-      data: { 
-        animalId, 
+      data: {
+        animalId,
         userId,
-        motivation: parsedBody.data.motivation // Dodano pole z bazy
+        motivation: parsedBody.data.motivation
       }
     });
 
     logger.info(`Wysłano prośbę o adopcję: Animal ${animalId} przez User ${userId}`);
     res.status(201).json({ message: "Prośba wysłana!", request });
-  } catch (error: any) {
-    if (error.code === 'P2002') return res.status(400).json({ error: "Już wysłałeś prośbę dla tego zwierzaka" });
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && (error as any).code === 'P2002') {
+      return res.status(400).json({ error: "Już wysłałeś prośbę dla tego zwierzaka" });
+    }
     logger.error("Błąd POST /request/:animalId:", error);
     res.status(500).json({ error: "Błąd serwera" });
   }
@@ -100,7 +102,6 @@ router.get('/my-received-requests', authenticateToken, async (req: AuthRequest, 
 // ─── 4. DECYZJA O ADOPCJI (AKCEPTACJA/ODRZUCENIE) ───────────────────────────
 router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
-    // Naprawa błędu ts(2412) przez jawne rzutowanie params
     const { requestId } = req.params as { requestId: string };
     const userId = req.user?.userId;
 
@@ -118,6 +119,11 @@ router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, r
     });
 
     if (!request) return res.status(404).json({ error: "Nie znaleziono prośby" });
+
+    // Blokada ponownego rozpatrywania już rozpatrzonej prośby
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: "Ta prośba została już rozpatrzona" });
+    }
 
     const isOwner = request.animal.userId === userId;
 

@@ -3,7 +3,7 @@ import prisma from '../lib/prisma.js';
 import { authenticateToken } from '../middleware/authenticateToken.js';
 import { authorize } from '../middleware/authorize.js';
 import { type AuthRequest } from '../types.js';
-import logger from '../lib/logger.js'; // Dodane logi
+import logger from '../lib/logger.js';
 
 const router = Router();
 
@@ -61,16 +61,32 @@ router.delete('/:id', authenticateToken, authorize(['ADMIN']), async (req: AuthR
   try {
     const id = req.params.id as string;
 
+    // Blokada usunięcia samego siebie
     if (id === req.user?.userId) {
       logger.warn(`Admin ${req.user?.userId} próbował usunąć samego siebie.`);
       return res.status(400).json({ error: 'Nie możesz usunąć samego siebie.' });
     }
 
+    // Sprawdź czy użytkownik istnieje
+    const targetUser = await prisma.user.findUnique({
+      where: { user_id: id },
+      include: { role: true }
+    });
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Użytkownik nie istnieje.' });
+    }
+
+    // Blokada usunięcia innego admina
+    if (targetUser.role.name === 'ADMIN') {
+      logger.warn(`Admin ${req.user?.userId} próbował usunąć innego admina (${id}).`);
+      return res.status(403).json({ error: 'Nie możesz usunąć innego administratora.' });
+    }
+
     await prisma.user.delete({
-      where: { user_id: id } 
+      where: { user_id: id }
     });
 
-    logger.info(`Użytkownik ${id} został usunięty przez Admina ${req.user?.userId}`);
+    logger.info(`Użytkownik ${id} (${targetUser.email}) został usunięty przez Admina ${req.user?.userId}`);
     res.json({ message: 'Użytkownik usunięty.' });
   } catch (error) {
     logger.error(`Błąd DELETE /api/users/${req.params.id}:`, error);
@@ -81,21 +97,43 @@ router.delete('/:id', authenticateToken, authorize(['ADMIN']), async (req: AuthR
 /**
  * PATCH /api/users/:id/role
  * Dostęp: TYLKO ADMIN
+ * Admin może nadać maksymalnie rolę MODERATOR (nie może tworzyć innych adminów).
  */
 router.patch('/:id/role', authenticateToken, authorize(['ADMIN']), async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;
     const { role } = req.body;
 
-    const validRoles = ['ADMIN', 'MODERATOR', 'NORMAL_USER'];
+    // Blokada zmiany własnej roli
+    if (id === req.user?.userId) {
+      logger.warn(`Admin ${req.user?.userId} próbował zmienić własną rolę.`);
+      return res.status(400).json({ error: 'Nie możesz zmienić własnej roli.' });
+    }
+
+    // Admin może nadać tylko MODERATOR lub NORMAL_USER — nie może tworzyć innych adminów
+    const validRoles = ['MODERATOR', 'NORMAL_USER'];
     if (!validRoles.includes(role)) {
-      return res.status(400).json({ error: 'Nieprawidłowa rola.' });
+      return res.status(403).json({ error: 'Możesz nadać maksymalnie rolę MODERATOR.' });
+    }
+
+    // Sprawdź czy docelowy użytkownik istnieje
+    const targetUser = await prisma.user.findUnique({
+      where: { user_id: id },
+      include: { role: true }
+    });
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Użytkownik nie istnieje.' });
+    }
+
+    // Blokada zmiany roli innego admina
+    if (targetUser.role.name === 'ADMIN') {
+      logger.warn(`Admin ${req.user?.userId} próbował zmienić rolę innego admina (${id}).`);
+      return res.status(403).json({ error: 'Nie możesz zmienić uprawnień innego administratora.' });
     }
 
     const roleRecord = await prisma.role.findFirst({
       where: { name: role }
     });
-
     if (!roleRecord) return res.status(404).json({ error: 'Rola nie istnieje w bazie.' });
 
     await prisma.user.update({
@@ -103,7 +141,9 @@ router.patch('/:id/role', authenticateToken, authorize(['ADMIN']), async (req: A
       data: { roleId: roleRecord.role_id }
     });
 
-    logger.info(`Rola użytkownika ${id} zmieniona na ${role} przez Admina ${req.user?.userId}`);
+    logger.info(
+      `Rola użytkownika ${id} (${targetUser.email}) zmieniona z ${targetUser.role.name} na ${role} przez Admina ${req.user?.userId}`
+    );
     res.json({ message: `Zmieniono rolę na ${role}` });
   } catch (error) {
     logger.error(`Błąd PATCH /api/users/${req.params.id}/role:`, error);

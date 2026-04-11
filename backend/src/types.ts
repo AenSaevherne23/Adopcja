@@ -4,7 +4,7 @@ import { type Request } from 'express';
 export type JwtPayload = { 
   userId: string; 
   email: string; 
-   role: 'ADMIN' | 'MODERATOR' | 'NORMAL_USER'; 
+  role: 'ADMIN' | 'MODERATOR' | 'NORMAL_USER'; 
 };
 
 // Rozszerzenie standardowego żądania Express o dane użytkownika

@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Rozpoczynam seeding bazy danych...');
 
-  // 1. Tworzenie ról (jeśli nie istnieją)
   const rolesData = [
     { name: RoleEnum.ADMIN },
     { name: RoleEnum.NORMAL_USER },
@@ -15,18 +14,19 @@ async function main() {
 
   for (const role of rolesData) {
     await prisma.role.upsert({
-      where: { role_id: rolesData.indexOf(role) + 1 }, // Zakładamy ID 1, 2, 3
+      where: { role_id: rolesData.indexOf(role) + 1 },
       update: {},
       create: role,
     });
   }
   console.log('Role zostały utworzone/zaktualizowane.');
 
-  // Pobieramy ID ról, żeby mieć pewność co przypisujemy
   const adminRole = await prisma.role.findFirst({ where: { name: RoleEnum.ADMIN } });
   const userRole = await prisma.role.findFirst({ where: { name: RoleEnum.NORMAL_USER } });
 
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminPassword) throw new Error('Brak SEED_ADMIN_PASSWORD w .env!');
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
   // 2. Tworzenie konta ADMINISTRATORA
   await prisma.user.upsert({

@@ -73,6 +73,14 @@ const deleteFile = async (filePath: string) => {
   try {
     const normalizedPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
     const absolutePath = path.join(process.cwd(), normalizedPath);
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+
+    // Blokada path traversal — plik musi być wewnątrz katalogu uploads
+    if (!absolutePath.startsWith(uploadsDir)) {
+      logger.warn(`Próba usunięcia pliku poza katalogiem uploads: ${absolutePath}`);
+      return;
+    }
+
     await fs.unlink(absolutePath);
   } catch (err) {
     logger.error(`Błąd podczas usuwania pliku ${filePath}:`, err);
@@ -165,7 +173,7 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next) 
       return res.status(400).json({ error: 'Błędne dane', details: parsed.error.issues });
     }
 
-    const updateData: any = { ...parsed.data };
+    const updateData: Record<string, unknown> = { ...parsed.data };
 
     if (req.file) {
       const type = await fileTypeFromFile(req.file.path);
@@ -210,6 +218,7 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
 
     res.json({ message: "Usunięto" });
   } catch (error) {
+    logger.error("Błąd DELETE /api/animals:", error);
     res.status(500).json({ error: "Błąd serwera" });
   }
 });
