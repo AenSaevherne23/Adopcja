@@ -143,7 +143,7 @@ export default function MojeZgloszenia() {
                   </div>
                 )}
 
-                <h2>Imię: {zwierze.name}</h2>
+                <h2><strong>Imię:</strong> {zwierze.name}</h2>
                 <p><strong>Rasa:</strong> {rasa}</p>
                 <p><strong>Opis:</strong> {zwierze.description}</p>
 

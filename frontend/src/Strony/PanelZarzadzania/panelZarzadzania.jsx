@@ -362,7 +362,7 @@ export default function PanelZarzadzania() {
                         </div>
                       )}
 
-                      <h3>Imię: {nazwa}</h3>
+                      <h3><strong>Imię:</strong> {nazwa}</h3>
                       <p><strong>Rasa:</strong> {rasa}</p>
                       <p><strong>Opis:</strong> {opis}</p>
                       <p className="meta-panel">

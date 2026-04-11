@@ -172,7 +172,7 @@ export default function OtrzymaneWnioski() {
                     </div>
                   )}
 
-                  <h2>Imię: {nazwa}</h2>
+                  <h2><strong>Imię:</strong> {nazwa}</h2>
 
                   <p className="opis">
                     <strong>Rasa:</strong> {rasa}

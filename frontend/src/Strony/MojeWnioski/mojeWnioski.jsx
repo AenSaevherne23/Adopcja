@@ -144,7 +144,7 @@ export default function MojeWnioski() {
                     </div>
                   )}
 
-                  <h2>Imię: {nazwa}</h2>
+                  <h2><strong>Imię:</strong> {nazwa}</h2>
                   <p><strong>Rasa:</strong> {rasa}</p>
                   <p><strong>Opis:</strong> {opis}</p>
 
