@@ -11,25 +11,25 @@ Seed tworzy domyślne role (ADMIN, MODERATOR, NORMAL_USER) oraz przykładowe kon
 7. Uruchom serwer - npm run dev
 
 ENDPOINTY:
-/api/auth
-POST /api/auth/register — rejestracja, przyjmuje { email, password }
-POST /api/auth/login — logowanie, zwraca { token, user: { email, role } }
 
-/api/animals
-GET /api/animals — lista wszystkich niezdoptowanych zwierząt, bez autoryzacji
-POST /api/animals — dodaj ogłoszenie, multipart/form-data z polami name, description, image
-PATCH /api/animals/:id — edytuj ogłoszenie, te same pola co POST (wszystkie opcjonalne)
-DELETE /api/animals/:id — usuń ogłoszenie wraz ze zdjęciem
+• /api/auth
+-POST /api/auth/register — rejestracja, przyjmuje { email, password }
+-POST /api/auth/login — logowanie, zwraca { token, user: { email, role } }
+• /api/animals
+- GET /api/animals — lista wszystkich niezdoptowanych zwierząt, bez autoryzacji
+- POST /api/animals — dodaj ogłoszenie, multipart/form-data z polami name, description, image
+- PATCH /api/animals/:id — edytuj ogłoszenie, te same pola co POST (wszystkie opcjonalne)
+- DELETE /api/animals/:id — usuń ogłoszenie wraz ze zdjęciem
 
-/api/adoptions
-POST /api/adoptions/request/:animalId — wyślij prośbę o adopcję danego zwierzaka
-GET /api/adoptions/my-sent-requests — lista prośb które sam wysłałeś
-GET /api/adoptions/my-received-requests — lista prośb o twoje zwierzęta (staff widzi wszystkie)
-PATCH /api/adoptions/status/:requestId — zmień status prośby, przyjmuje { status: "approved" | "rejected" }. 
+• /api/adoptions
+-  POST /api/adoptions/request/:animalId — wyślij prośbę o adopcję danego zwierzaka
+- GET /api/adoptions/my-sent-requests — lista prośb które sam wysłałeś
+- GET /api/adoptions/my-received-requests — lista prośb o twoje zwierzęta (staff widzi wszystkie)
+- PATCH /api/adoptions/status/:requestId — zmień status prośby, przyjmuje { status: "approved" | "rejected" }. 
 Przy approved automatycznie oznacza zwierzaka jako adoptowanego i odrzuca pozostałe prośby dla tego zwierzaka
 
-/api/users
-GET /api/users — lista wszystkich użytkowników (tylko Admin/Moderator)
-GET /api/users/me — twój profil z ogłoszeniami i prośbami o adopcję
-DELETE /api/users/:id — usuń użytkownika (tylko Admin)
-PATCH /api/users/:id/role — zmień rolę użytkownika, przyjmuje { role: "ADMIN" | "MODERATOR" | "NORMAL_USER" } (tylko Admin)
+• /api/users
+- GET /api/users — lista wszystkich użytkowników (tylko Admin/Moderator)
+- GET /api/users/me — twój profil z ogłoszeniami i prośbami o adopcję
+- DELETE /api/users/:id — usuń użytkownika (tylko Admin)
+- PATCH /api/users/:id/role — zmień rolę użytkownika, przyjmuje { role: "ADMIN" | "MODERATOR" | "NORMAL_USER" } (tylko Admin)
