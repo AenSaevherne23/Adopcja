@@ -75,7 +75,6 @@ const deleteFile = async (filePath: string) => {
     const absolutePath = path.join(process.cwd(), normalizedPath);
     const uploadsDir = path.join(process.cwd(), 'uploads');
 
-    // Blokada path traversal — plik musi być wewnątrz katalogu uploads
     if (!absolutePath.startsWith(uploadsDir)) {
       logger.warn(`Próba usunięcia pliku poza katalogiem uploads: ${absolutePath}`);
       return;
