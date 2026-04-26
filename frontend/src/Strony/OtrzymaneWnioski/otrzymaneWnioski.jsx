@@ -39,7 +39,8 @@ export default function OtrzymaneWnioski() {
       );
 
       if (!odpowiedz.ok) {
-        throw new Error(`HTTP ${odpowiedz.status}`);
+        const dane = await odpowiedz.json();
+        throw new Error(dane.error || `HTTP ${odpowiedz.status}`);
       }
 
       const dane = await odpowiedz.json();

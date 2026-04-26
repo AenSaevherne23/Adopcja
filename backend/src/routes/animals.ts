@@ -123,7 +123,7 @@ router.post('/', authenticateToken, (req: AuthRequest, res: Response, next) => {
   } catch (error) {
     if (req.file) await deleteFile(req.file.path);
     logger.error("Błąd POST /api/animals:", error);
-    res.status(500).json({ error: 'Błąd serwera' });
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 
@@ -138,7 +138,8 @@ router.get('/', async (req, res) => {
     });
     res.json(animals);
   } catch (error) {
-    res.status(500).json({ error: "Błąd pobierania danych" });
+    logger.error("Błąd GET /api/animals:", error);
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 
@@ -193,7 +194,7 @@ router.patch('/:id', authenticateToken, (req: AuthRequest, res: Response, next) 
   } catch (error) {
     if (req.file) await deleteFile(req.file.path);
     logger.error("Błąd PATCH:", error);
-    res.status(500).json({ error: "Błąd serwera" });
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 
@@ -218,7 +219,7 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
     res.json({ message: "Usunięto" });
   } catch (error) {
     logger.error("Błąd DELETE /api/animals:", error);
-    res.status(500).json({ error: "Błąd serwera" });
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 

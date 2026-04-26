@@ -104,7 +104,7 @@ router.post('/login', async (req: Request, res: Response) => {
   } catch (error) {
     if (error instanceof z.ZodError) return res.status(400).json({ error: error.issues });
     logger.error("Błąd podczas logowania:", error);
-    res.status(500).json({ error: 'Coś poszło nie tak' });
+    res.status(500).json({ error: 'Trwają prace serwisowe. Spróbuj ponownie później.' });
   }
 });
 

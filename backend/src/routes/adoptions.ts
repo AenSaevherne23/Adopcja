@@ -57,7 +57,7 @@ router.post('/request/:animalId', authenticateToken, async (req: AuthRequest, re
       return res.status(400).json({ error: "Już wysłałeś prośbę dla tego zwierzaka" });
     }
     logger.error("Błąd POST /request/:animalId:", error);
-    res.status(500).json({ error: "Błąd serwera" });
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 
@@ -74,7 +74,7 @@ router.get('/my-sent-requests', authenticateToken, async (req: AuthRequest, res:
     res.json(requests);
   } catch (error) {
     logger.error("Błąd GET /my-sent-requests:", error);
-    res.status(500).json({ error: "Błąd serwera" });
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 
@@ -94,7 +94,7 @@ router.get('/my-received-requests', authenticateToken, async (req: AuthRequest, 
     res.json(requests);
   } catch (error) {
     logger.error("Błąd GET /my-received-requests:", error);
-    res.status(500).json({ error: "Błąd serwera" });
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 

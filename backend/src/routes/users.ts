@@ -26,7 +26,7 @@ router.get('/', authenticateToken, authorize(['ADMIN', 'MODERATOR']), async (req
     res.json(users);
   } catch (error) {
     logger.error("Błąd GET /api/users:", error);
-    res.status(500).json({ error: 'Błąd serwera.' });
+    res.status(503).json({ error: "Trwają prace serwisowe. Spróbuj ponownie później." });
   }
 });
 
