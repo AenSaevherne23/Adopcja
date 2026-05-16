@@ -60,10 +60,11 @@ export default function KotyZApi() {
               <div className="znacznik-api">Inspiracja</div>
 
               <h3 className="nazwa-kota-api">
-                {rasa?.name || "Kot bez przypisanej rasy"}
+                Rasa: {rasa?.name || "Kot bez przypisanej rasy"}
               </h3>
 
               <p className="opis-kota-api">
+                <strong>Cechy:</strong>{" "}
                 {rasa?.temperament || "Brak dodatkowego opisu temperamentu."}
               </p>
               
