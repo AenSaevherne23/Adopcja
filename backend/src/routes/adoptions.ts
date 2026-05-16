@@ -130,11 +130,18 @@ router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, r
       return res.status(403).json({ error: "Tylko właściciel lub administracja może zarządzać tą prośbą" });
     }
 
-    if (status === 'approved' && request.animal.is_adopted) {
-      return res.status(400).json({ error: "Ten zwierzak został już adoptowany przez kogoś innego" });
-    }
-
+    // Sprawdzenie is_adopted przeniesione do wnętrza transakcji
     await prisma.$transaction(async (tx) => {
+      if (status === 'approved') {
+        const freshAnimal = await tx.animal.findUnique({
+          where: { animal_id: request.animalId }
+        });
+
+        if (freshAnimal?.is_adopted) {
+          throw new Error('ALREADY_ADOPTED');
+        }
+      }
+
       await tx.adoptionRequest.update({
         where: { request_id: requestId },
         data: { status }
@@ -156,11 +163,17 @@ router.patch('/status/:requestId', authenticateToken, async (req: AuthRequest, r
           data: { status: 'rejected' }
         });
       }
+    }, {
+      isolationLevel: 'Serializable'
     });
 
     logger.info(`Zmieniono status prośby ${requestId} na ${status} przez User ${userId}`);
     res.json({ message: `Status zmieniony na: ${status}` });
   } catch (error) {
+    // Obsługa błędu rzuconego wewnątrz transakcji
+    if (error instanceof Error && error.message === 'ALREADY_ADOPTED') {
+      return res.status(400).json({ error: "Ten zwierzak został już adoptowany przez kogoś innego" });
+    }
     logger.error(`Błąd PATCH /status:`, error);
     res.status(500).json({ error: "Błąd podczas procesowania decyzji" });
   }

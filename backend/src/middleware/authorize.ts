@@ -7,8 +7,8 @@ export const authorize = (allowedRoles: string[]) => {
     if (req.user && userRole && allowedRoles.includes(userRole)) {
       next();
     } else {
-      res.status(403).json({ 
-        error: `Brak uprawnień. Wymagana jedna z ról: ${allowedRoles.join(', ')}` 
+      res.status(403).json({
+          error: 'Brak uprawnień'
       });
     }
   };

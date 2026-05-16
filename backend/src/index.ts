@@ -100,6 +100,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // ─── START ────────────────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
-  logger.info(`🚀 Serwer wystartował na porcie ${PORT}`);
+  logger.info(`Serwer wystartował na porcie ${PORT}`);
   console.log(`Serwer działa: http://localhost:${PORT}`);
 });
