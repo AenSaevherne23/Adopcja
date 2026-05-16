@@ -13,7 +13,7 @@ export default function KotyZApi() {
     async function pobierzDaneKotow() {
       try {
         const dane = await pobierzKoty();
-        ustawKoty(Array.isArray(dane) ? dane : []);
+        ustawKoty(Array.isArray(dane) ? dane.slice(0, 6) : []);
       } catch (error) {
         ustawBlad(error.message || "Nie udało się pobrać kotów z API.");
       } finally {

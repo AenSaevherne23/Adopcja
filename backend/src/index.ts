@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import animalsRoutes from './routes/animals.js';
 import adoptionsRoutes from './routes/adoptions.js';
+import catsRoutes from './routes/cats.js';
 
 import logger from './lib/logger.js';
 
@@ -82,6 +83,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/animals', animalsRoutes);
 app.use('/api/adoptions', adoptionsRoutes);
+app.use('/api/cats', catsRoutes);
 
 // ─── GLOBALNY ERROR HANDLER ───────────────────────────────────────────────────
 
